@@ -15,18 +15,21 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Install Azure CLI
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+
+    - name: Install Static Web Apps CLI
       run: |
-        curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+        npm install -g @azure/static-web-apps-cli
 
     - name: Deploy Static Web App
       env:
         AZURE_STATIC_WEB_APPS_API_TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
       run: |
-        az extension add --name staticwebapp
-        az staticwebapp deploy \
-          --source "." \
-          --token $AZURE_STATIC_WEB_APPS_API_TOKEN \
-          --api-location "api" \
+        swa deploy \
           --app-location "/" \
-          --output-location "public"
+          --api-location "api" \
+          --output-location "public" \
+          --deployment-token $AZURE_STATIC_WEB_APPS_API_TOKEN
