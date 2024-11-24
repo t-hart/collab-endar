@@ -22,14 +22,25 @@ jobs:
 
     - name: Install Static Web Apps CLI
       run: |
-        npm install -g @azure/static-web-apps-cli
+        sudo npm install -g @azure/static-web-apps-cli
 
     - name: Deploy Static Web App
       env:
         AZURE_STATIC_WEB_APPS_API_TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
       run: |
-        swa deploy \
-          --app-location "/" \
+        # Create deployment directory
+        mkdir -p deploy_content
+
+        # Copy only necessary files
+        cp -r public/* deploy_content/
+        cp -r api deploy_content/
+
+        # Deploy with specific API settings
+        swa deploy ./deploy_content \
+          --app-location "." \
           --api-location "api" \
-          --output-location "public" \
-          --deployment-token $AZURE_STATIC_WEB_APPS_API_TOKEN
+          --output-location "." \
+          --deployment-token $AZURE_STATIC_WEB_APPS_API_TOKEN \
+          --api-language "python" \
+          --api-version "3.9" \
+          --env production
