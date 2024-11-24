@@ -22,7 +22,7 @@ jobs:
 
     - name: Install Static Web Apps CLI
       run: |
-        sudo npm install -g @azure/static-web-apps-cli
+        npm install -g @azure/static-web-apps-cli
 
     - name: Deploy Static Web App
       env:
