@@ -1,9 +1,12 @@
+// App.js
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 function App() {
   const [message, setMessage] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   const fetchData = async (name = '') => {
     setLoading(true);
@@ -17,7 +20,7 @@ function App() {
       }
 
       const data = await response.json();
-      setMessage(data.result); // Access the 'result' field from your JSON response
+      setMessage(data.result);
     } catch (error) {
       console.error('Error fetching data:', error);
       setError('Failed to fetch data from the API');
@@ -36,6 +39,10 @@ function App() {
     if (name.trim()) {
       await fetchData(name);
     }
+  };
+
+  const handleNavigate = () => {
+    navigate('/planner');
   };
 
   return (
@@ -77,6 +84,12 @@ function App() {
           </button>
         </div>
       </form>
+      <button
+        onClick={handleNavigate}
+        className="mt-4 px-6 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500"
+      >
+        Create a trip plan
+      </button>
     </div>
   );
 }
