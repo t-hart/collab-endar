@@ -19,11 +19,6 @@ export const NestedCards = () => {
 
     useEffect(() => {
         const timer = setTimeout(() => {
-            // setCards([
-            //     cards[0],
-            //     { id: Date.now(), content: 'Async Card' },
-            //     cards[1]
-            // ]);
             handleAddIdx(0);
         }, 10000);
 
@@ -31,26 +26,28 @@ export const NestedCards = () => {
     }, []);
 
     const handleDelete = (id: string) => {
-        setCards(cards.filter(card => card.id !== id));
+        setCards(current => current.filter(card => card.id !== id));
     };
     const handleDeleteIdx = (idx: number) => {
-        setCards([...cards.slice(0, idx),
-        ...cards.slice(idx + 1)]);
+        setCards(current => [...current.slice(0, idx),
+        ...current.slice(idx + 1)]);
     };
     const handleAdd = (id: string) => {
-        const index = cards.findIndex(card => card.id === id);
-        setCards([...cards.slice(0, index + 1),
-        { id: uuid(), content: 'Async Card' },
-        ...cards.slice(index + 1)]);
+        setCards(current => {
+            const index = current.findIndex(card => card.id === id);
+            return [...current.slice(0, index + 1),
+            { id: uuid(), content: 'Async Card' },
+            ...current.slice(index + 1)]
+        });
     };
     const handleAddIdx = (idx: number) => {
-        setCards([...cards.slice(0, idx + 1),
+        setCards(current => [...current.slice(0, idx + 1),
         { id: uuid(), content: 'Async Card' },
-        ...cards.slice(idx + 1)]);
+        ...current.slice(idx + 1)]);
     };
 
     const handleContentChange = (id: string, newContent: string) => {
-        setCards(cards.map(card =>
+        setCards(current => current.map(card =>
             card.id === id ? { ...card, content: newContent } : card
         ));
     };

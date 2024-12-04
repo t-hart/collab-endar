@@ -22,7 +22,6 @@ export const ActivityCard = ({ idx, content, deleteCardHandler, addCardHandler }
 
   return (
     <Card
-      key={idx}
       className="mb-4 relative"
       onMouseEnter={() => setHoveredCard(idx)}
       onMouseLeave={() => setHoveredCard(null)}
