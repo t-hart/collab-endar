@@ -2,15 +2,17 @@
 import React, { ChangeEvent, useState } from 'react';
 import { Card, CardContent, IconButton, TextField } from '@mui/material';
 import { Delete, Add } from '@mui/icons-material';
+import AddDelButtons from './AddDelButtons';
+import { AddType, AddProps } from '../helpers/interface';
 
 export interface ActivityCardProps {
   id: number;
   content?: string;
-  deleteCardHandler: (id: number) => void;
-  addCardHandler: (id: number) => void;
+  delActvCardHandler: (id: number) => void;
+  addActvCardHandler: (props: AddProps) => void;
 }
 
-export const ActivityCard = ({ id, content, deleteCardHandler, addCardHandler }: ActivityCardProps) => {
+export const ActivityCard = ({ id, content, delActvCardHandler, addActvCardHandler }: ActivityCardProps) => {
   const [activityTxt, setActivityTxt] = useState<string>(content ? content : "");
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
   const [isActive, setIsActive] = useState(false);
@@ -45,30 +47,11 @@ export const ActivityCard = ({ id, content, deleteCardHandler, addCardHandler }:
           paddingBottom: '12px !important'
         }
       }}>
-        {hoveredCard === id && (
-          <div className="absolute top-2 right-2 flex gap-2">
-            <IconButton
-              onClick={() => deleteCardHandler(id)}
-              size="small"
-              sx={{
-                padding: '4px',
-                backgroundColor: 'rgba(255, 255, 255, 0.9)',
-              }}
-            >
-              <Delete fontSize="small" />
-            </IconButton>
-            <IconButton
-              onClick={() => addCardHandler(id)}
-              size="small"
-              sx={{
-                padding: '4px',
-                backgroundColor: 'rgba(255, 255, 255, 0.9)',
-              }}
-            >
-              <Add fontSize="small" />
-            </IconButton>
-          </div>
-        )}
+        {hoveredCard === id && <AddDelButtons
+          id={id}
+          deleteCardHandler={delActvCardHandler}
+          addCardHandler={addActvCardHandler}
+        ></AddDelButtons>}
         <TextField
           fullWidth
           variant="standard"

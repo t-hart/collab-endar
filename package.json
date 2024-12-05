@@ -18,7 +18,8 @@
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
     "@mui/lab": "^5.0.0-alpha.155",
-    "uuid": "^11.0.3"
+    "uuid": "^11.0.3",
+    "date-fns": "^3.0.0"
   },
   "scripts": {
     "start": "react-scripts start",
