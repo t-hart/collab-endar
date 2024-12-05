@@ -45,16 +45,29 @@ export const DateCard = ({ date, delDateCardHandler, addDateCardHandler }: DateC
         setCards(current => {
             const idx = current.findIndex(card => card.id === props.id)
             let newCard: ActCardProps
-            if (idx === current.length - 1) {
-                newCard = { id: props.id + ACTV_CARD_STEP, content: 'Newly added Card' }
-            } else {
-                const newId = (current[idx].id + current[idx + 1].id) / 2
-                newCard = { id: newId, content: 'Newly added Card' }
-            }
+            if (props.addType === AddType.AFTER) {
+                if (idx === current.length - 1) {
+                    newCard = { id: props.id + ACTV_CARD_STEP }
+                } else {
+                    const newId = (current[idx].id + current[idx + 1].id) / 2
+                    newCard = { id: newId }
+                }
 
-            return [...current.slice(0, idx + 1),
-                newCard,
-            ...current.slice(idx + 1)]
+                return [...current.slice(0, idx + 1),
+                    newCard,
+                ...current.slice(idx + 1)]
+            } else {
+                if (idx === 0) {
+                    newCard = { id: props.id - ACTV_CARD_STEP }
+                } else {
+                    const newId = (current[idx - 1].id + current[idx].id) / 2
+                    newCard = { id: newId }
+                }
+
+                return [...current.slice(0, idx),
+                    newCard,
+                ...current.slice(idx)]
+            }
         });
     };
 

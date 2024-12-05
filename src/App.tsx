@@ -3,8 +3,8 @@ import { HubConnectionBuilder, LogLevel } from '@microsoft/signalr';
 import { DateCard } from "./components/DateCard"
 import { v4 as uuid } from 'uuid';
 import { Stack } from '@mui/material';
-import { AddProps } from './helpers/interface';
-import { addDays, differenceInDays } from 'date-fns';
+import { AddType, AddProps } from './helpers/interface';
+import { addDays, subDays, differenceInDays } from 'date-fns';
 
 
 export interface AppProps {
@@ -29,14 +29,26 @@ function App() {
   const addDate = (props: AddProps) => {
     setDates(current => {
       const idx = current.findIndex(date => date.date === props.id)
-      if (idx < current.length - 1 && differenceInDays(current[idx + 1].date, current[idx].date) === 1) {
-        alert("Next date already exists")
-        return current;
+      if (props.addType === AddType.AFTER) {
+        if (idx < current.length - 1 && differenceInDays(current[idx + 1].date, current[idx].date) === 1) {
+          alert("Next date already exists")
+          return current;
+        }
+        const newCard = { date: addDays(props.id, 1) }
+        return [...current.slice(0, idx + 1),
+          newCard,
+        ...current.slice(idx + 1)]
+      } else {
+        if (idx > 0 && differenceInDays(current[idx].date, current[idx - 1].date) === 1) {
+          alert("Previous date already exists")
+          return current;
+        }
+        const newCard = { date: subDays(props.id, 1) }
+        return [...current.slice(0, idx),
+          newCard,
+        ...current.slice(idx)]
+
       }
-      const newCard = { date: addDays(props.id, 1) }
-      return [...current.slice(0, idx + 1),
-        newCard,
-      ...current.slice(idx + 1)]
 
     })
   };
