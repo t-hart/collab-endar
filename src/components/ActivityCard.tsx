@@ -4,13 +4,13 @@ import { Card, CardContent, IconButton, TextField } from '@mui/material';
 import { Delete, Add } from '@mui/icons-material';
 
 export interface ActivityCardProps {
-  idx: number;
+  id: number;
   content?: string;
-  deleteCardHandler: (idx: number) => void;
-  addCardHandler: (idx: number) => void;
+  deleteCardHandler: (id: number) => void;
+  addCardHandler: (id: number) => void;
 }
 
-export const ActivityCard = ({ idx, content, deleteCardHandler, addCardHandler }: ActivityCardProps) => {
+export const ActivityCard = ({ id, content, deleteCardHandler, addCardHandler }: ActivityCardProps) => {
   const [activityTxt, setActivityTxt] = useState<string>(content ? content : "");
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
   const [isActive, setIsActive] = useState(false);
@@ -19,13 +19,15 @@ export const ActivityCard = ({ idx, content, deleteCardHandler, addCardHandler }
     setActivityTxt(e.target.value);
   };
 
+  console.log(`id of the card: ${id}`)
+
   return (
     <Card
       className={`
         transition-all duration-200
         ${isActive ? 'ring-2 ring-blue-200 bg-blue-50' : ''}
       `}
-      onMouseEnter={() => setHoveredCard(idx)}
+      onMouseEnter={() => setHoveredCard(id)}
       onMouseLeave={() => setHoveredCard(null)}
       sx={{
         border: '1px solid rgba(0, 0, 0, 0.08)',
@@ -43,10 +45,10 @@ export const ActivityCard = ({ idx, content, deleteCardHandler, addCardHandler }
           paddingBottom: '12px !important'
         }
       }}>
-        {hoveredCard === idx && (
+        {hoveredCard === id && (
           <div className="absolute top-2 right-2 flex gap-2">
             <IconButton
-              onClick={() => deleteCardHandler(idx)}
+              onClick={() => deleteCardHandler(id)}
               size="small"
               sx={{
                 padding: '4px',
@@ -56,7 +58,7 @@ export const ActivityCard = ({ idx, content, deleteCardHandler, addCardHandler }
               <Delete fontSize="small" />
             </IconButton>
             <IconButton
-              onClick={() => addCardHandler(idx)}
+              onClick={() => addCardHandler(id)}
               size="small"
               sx={{
                 padding: '4px',
