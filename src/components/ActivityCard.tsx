@@ -2,15 +2,17 @@
 import React, { ChangeEvent, useState } from 'react';
 import { Card, CardContent, IconButton, TextField } from '@mui/material';
 import { Delete, Add } from '@mui/icons-material';
+import AddDelButtons from './AddDelButtons';
+import { AddType, AddProps } from '../helpers/interface';
 
 export interface ActivityCardProps {
-  idx: number;
+  id: number;
   content?: string;
-  deleteCardHandler: (idx: number) => void;
-  addCardHandler: (idx: number) => void;
+  delActvCardHandler: (id: number) => void;
+  addActvCardHandler: (props: AddProps) => void;
 }
 
-export const ActivityCard = ({ idx, content, deleteCardHandler, addCardHandler }: ActivityCardProps) => {
+export const ActivityCard = ({ id, content, delActvCardHandler, addActvCardHandler }: ActivityCardProps) => {
   const [activityTxt, setActivityTxt] = useState<string>(content ? content : "");
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
   const [isActive, setIsActive] = useState(false);
@@ -19,13 +21,15 @@ export const ActivityCard = ({ idx, content, deleteCardHandler, addCardHandler }
     setActivityTxt(e.target.value);
   };
 
+  console.log(`id of the card: ${id}`)
+
   return (
     <Card
       className={`
         transition-all duration-200
         ${isActive ? 'ring-2 ring-blue-200 bg-blue-50' : ''}
       `}
-      onMouseEnter={() => setHoveredCard(idx)}
+      onMouseEnter={() => setHoveredCard(id)}
       onMouseLeave={() => setHoveredCard(null)}
       sx={{
         border: '1px solid rgba(0, 0, 0, 0.08)',
@@ -43,30 +47,11 @@ export const ActivityCard = ({ idx, content, deleteCardHandler, addCardHandler }
           paddingBottom: '12px !important'
         }
       }}>
-        {hoveredCard === idx && (
-          <div className="absolute top-2 right-2 flex gap-2">
-            <IconButton
-              onClick={() => deleteCardHandler(idx)}
-              size="small"
-              sx={{
-                padding: '4px',
-                backgroundColor: 'rgba(255, 255, 255, 0.9)',
-              }}
-            >
-              <Delete fontSize="small" />
-            </IconButton>
-            <IconButton
-              onClick={() => addCardHandler(idx)}
-              size="small"
-              sx={{
-                padding: '4px',
-                backgroundColor: 'rgba(255, 255, 255, 0.9)',
-              }}
-            >
-              <Add fontSize="small" />
-            </IconButton>
-          </div>
-        )}
+        {hoveredCard === id && <AddDelButtons
+          id={id}
+          deleteCardHandler={delActvCardHandler}
+          addCardHandler={addActvCardHandler}
+        ></AddDelButtons>}
         <TextField
           fullWidth
           variant="standard"

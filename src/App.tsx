@@ -1,13 +1,69 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { HubConnectionBuilder, LogLevel } from '@microsoft/signalr';
-import { NestedCards } from "./components/NestedCards"
+import { DateCard } from "./components/DateCard"
+import { v4 as uuid } from 'uuid';
+import { Stack } from '@mui/material';
+import { AddType, AddProps } from './helpers/interface';
+import { addDays, subDays, differenceInDays } from 'date-fns';
 
+
+export interface AppProps {
+  date: Date
+}
 
 function App() {
+  const [dates, setDates] = useState<AppProps[]>([
+    { date: new Date("2025-01-01") },
+    { date: new Date("2025-01-05") },
+    { date: new Date("2025-01-10") },
+  ]);
+
+  const deleteDate = (id: Date) => {
+    setDates(current => {
+      const idx = current.findIndex(date => date.date === id)
+      return [...current.slice(0, idx),
+      ...current.slice(idx + 1)]
+    });
+  };
+
+  const addDate = (props: AddProps) => {
+    setDates(current => {
+      const idx = current.findIndex(date => date.date === props.id)
+      if (props.addType === AddType.AFTER) {
+        if (idx < current.length - 1 && differenceInDays(current[idx + 1].date, current[idx].date) === 1) {
+          alert("Next date already exists")
+          return current;
+        }
+        const newCard = { date: addDays(props.id, 1) }
+        return [...current.slice(0, idx + 1),
+          newCard,
+        ...current.slice(idx + 1)]
+      } else {
+        if (idx > 0 && differenceInDays(current[idx].date, current[idx - 1].date) === 1) {
+          alert("Previous date already exists")
+          return current;
+        }
+        const newCard = { date: subDays(props.id, 1) }
+        return [...current.slice(0, idx),
+          newCard,
+        ...current.slice(idx)]
+
+      }
+
+    })
+  };
+
   return (
-    <div>
-      <NestedCards />
-    </div>
+    <Stack direction="row" spacing={2}>
+      {dates.map(card => (
+        <DateCard
+          key={card.date.toString()}
+          date={card.date}
+          delDateCardHandler={deleteDate}
+          addDateCardHandler={addDate}
+        />
+      ))}
+    </Stack >
   )
 }
 
