@@ -1,9 +1,8 @@
 // ActivityCard.tsx
 import React, { ChangeEvent, useState, useEffect } from 'react';
-import { Card, CardContent, IconButton, TextField } from '@mui/material';
-import { Delete, Add } from '@mui/icons-material';
+import { Card, CardContent, TextField } from '@mui/material';
 import AddDelButtons from './AddDelButtons';
-import { AddType, AddProps } from '../helpers/interface';
+import { AddProps } from '../helpers/interface';
 import { HubConnection } from '@microsoft/signalr';
 
 export interface ActivityCardProps {
@@ -25,15 +24,9 @@ export const ActivityCard = ({ id, content, delActvCardHandler, addActvCardHandl
 
   console.log(`id of the card: ${id}`)
 
+  // signalR listeners
+  // TODO: add real handler for each event to lock activity and update activityTxt
   useEffect(() => {
-    connection.on("activityAdded", (activity) => {
-      console.log("[SignalR] activityAdded: ", activity);
-    });
-
-    connection.on("activityDeleted", (id) => {
-      console.log("[SignalR] activityDeleted: ", id);
-    });
-
     connection.on("lockActivity", (id) => {
       console.log("[SignalR] lockActivity: ", id);
     });
@@ -43,6 +36,8 @@ export const ActivityCard = ({ id, content, delActvCardHandler, addActvCardHandl
     });
   })
 
+  // component render
+  // TODO: add logics and style to lock this component when needed
   return (
     <Card
       className={`

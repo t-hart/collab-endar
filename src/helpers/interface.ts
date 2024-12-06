@@ -65,3 +65,13 @@ export function createPlanDate(date: Date, createdBy: string): PlanDate {
 
   }
 }
+
+
+export function getDateString(date: Date): string {
+  return date.toISOString().slice(0, 10)
+}
+
+
+export interface ErrorResponse {
+  error: string;
+}

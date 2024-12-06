@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { HubConnectionBuilder, LogLevel, HubConnection } from '@microsoft/signalr';
+import React, { useState, useEffect } from 'react';
+import { HubConnectionBuilder, HubConnection } from '@microsoft/signalr';
 import { DateCard } from "./components/DateCard"
-import { v4 as uuid } from 'uuid';
 import { Stack } from '@mui/material';
-import { AddType, AddProps, Plan, createBasePlan, PlanDate, createPlanDate } from './helpers/interface';
+import { AddType, AddProps, createBasePlan, PlanDate, createPlanDate, getDateString, ErrorResponse } from './helpers/interface';
 import { addDays, subDays, differenceInDays } from 'date-fns';
 
 
@@ -14,12 +13,17 @@ export interface AppProps {
 function App() {
   const userName = "Hieu Tran"
   const plan = createBasePlan("some_plan_name", userName, "2025-01-05", "2025-01-09");
+  const planId = plan.planMetadata.planId
 
   const [dates, setDates] = useState(plan.dates);
+  const [addedDate, setAddedDate] = useState<PlanDate | null>();
+  const [deletedDate, setDeletedDate] = useState<Date | null>();
+  const [connection, setConnection] = useState<HubConnection | null>(null);
+  const [error, setError] = useState("");
 
-  const deleteDate = (id: Date) => {
+  const deleteDateHandler = (id: Date) => {
     setDates(current => {
-      if (current.length == 1) {
+      if (current.length === 1) {
         alert("A plan needs at least one date")
         return current
       }
@@ -27,9 +31,10 @@ function App() {
       return [...current.slice(0, idx),
       ...current.slice(idx + 1)]
     });
+    setDeletedDate(id);
   };
 
-  const addDate = (props: AddProps) => {
+  const addDateHandler = (props: AddProps) => {
     setDates(current => {
       const idx = current.findIndex(date => date.id === props.id)
       if (props.addType === AddType.AFTER) {
@@ -38,6 +43,7 @@ function App() {
           return current;
         }
         const newCard = createPlanDate(addDays(props.id, 1), userName)
+        setAddedDate(newCard)
         return [...current.slice(0, idx + 1),
           newCard,
         ...current.slice(idx + 1)]
@@ -47,6 +53,7 @@ function App() {
           return current;
         }
         const newCard = createPlanDate(subDays(props.id, 1), userName)
+        setAddedDate(newCard)
         return [...current.slice(0, idx),
           newCard,
         ...current.slice(idx)]
@@ -56,8 +63,9 @@ function App() {
     })
   };
 
-  const [connection, setConnection] = useState<HubConnection | null>(null);
+
   useEffect(() => {
+
     const startSignalRConnection = async () => {
       try {
         // placeholder for now
@@ -70,35 +78,33 @@ function App() {
         }
         const connectionInfo = await response.json();
 
-        const connection = new HubConnectionBuilder()
+        const conn = new HubConnectionBuilder()
           .withUrl(connectionInfo.url, { accessTokenFactory: () => connectionInfo.accessToken })
           .withAutomaticReconnect()
           .build();
 
-        // Add event listeners
-        connection.on("planCreated", (plan) => {
-          console.log("[SignalR] planCreated: ", plan);
-        });
-
-        connection.on("planDelete", (id) => {
-          console.log("[SignalR] planDeleted: ", id);
-        });
-
-        // Start signalR connection
-        await connection.start();
+        // Start signalR conn
+        await conn.start();
         console.log("Connected to SignalR hub");
 
         // Register user
-        const registerUser = await fetch(`/api/registerUser?planId=${planId}&connectionId=${connection.connectionId}`);
+        const registerUser = await fetch(`/api/registerUser?planId=${planId}&connectionId=${conn.connectionId}`);
         if (!registerUser.ok) {
-          throw new Error(`Registering user failed: ${registerUser.statusText}`);
+          const err = `Registering user failed: ${registerUser.statusText}`
+          alert(err)
+          setError(err)
         }
-        setConnection(connection);
+        setConnection(conn)
       } catch (err) {
         console.error("SignalR Connection Error: ", err);
+        alert("Starting SignalR connection failed");
+        setError("Starting SignalR connection failed")
       }
     };
-    startSignalRConnection();
+
+    if (!connection) {
+      startSignalRConnection();
+    };
 
     // Cleanup on unmount
     return () => {
@@ -108,15 +114,93 @@ function App() {
     };
   }, []);
 
+  // signalR listeners
+  // TODO: add real handler for each event
+  useEffect(() => {
+    if (!connection) return;
+    // Add event listeners
+    connection.on("planCreated", (plan) => {
+      console.log("[SignalR] planCreated: ", plan);
+    });
+
+    connection.on("planDelete", (id) => {
+      console.log("[SignalR] planDeleted: ", id);
+    });
+
+    // TODO: call setDates for date added and deleted events
+    connection.on("dateAdded", (date) => {
+      console.log("[SignalR] dateAdded: ", date);
+    });
+    connection.on("dateDeleted", (id) => {
+      console.log("[SignalR] dateDeleted: ", id);
+    });
+  })
+
+  // send Date DELETE event
+  useEffect(() => {
+    if (!deletedDate) return;
+
+    (async () => {
+      try {
+        const response = await fetch(`/api/deleteDate/${planId}/${getDateString(deletedDate)}`, {
+          method: "DELETE",
+        });
+        if (!response.ok) {
+          const data = await response.json()
+          alert(`Error received from deleteDate API: ${(data as ErrorResponse).error}`)
+        }
+      } catch (err) {
+        alert(`Failed calling deleteDate API`)
+      }
+    })();
+  }, [deletedDate])
+
+  // send Date ADD event
+  useEffect(() => {
+    if (!addedDate) return;
+
+    (async () => {
+      try {
+        const response = await fetch(`/api/addDate/${planId}`, {
+          method: "POST",
+          body: JSON.stringify(addedDate)
+        });
+        if (!response.ok) {
+          const data = await response.json()
+          alert(`Error received from addDate API: ${(data as ErrorResponse).error}`)
+        }
+      } catch (err) {
+        alert(`Error received while sending added activity`)
+      }
+    })()
+
+  }, [addedDate])
+
+  if (error) {
+    return (
+      <div>
+        <h1> {error}</h1>
+      </div>
+    )
+  } else if (!connection) {
+    return (
+      <div>
+        <h1> Connecting to SignalR ...</h1>
+      </div>
+    )
+  }
+
   return (
     <Stack direction="row" spacing={2}>
       {dates.map(card => (
         <DateCard
           key={card.id.toString()}
           userName={userName}
+          planId={planId}
           planDate={card}
-          delDateCardHandler={deleteDate}
-          addDateCardHandler={addDate}
+          connection={connection}
+          delDateCardHandler={deleteDateHandler}
+          addDateCardHandler={addDateHandler}
         />
       ))}
     </Stack >
