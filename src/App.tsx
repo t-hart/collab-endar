@@ -84,30 +84,6 @@ function App() {
           console.log("[SignalR] planDeleted: ", id);
         });
 
-        connection.on("dateAdded", (date) => {
-          console.log("[SignalR] dateAdded: ", date);
-        });
-
-        connection.on("dateDeleted", (id) => {
-          console.log("[SignalR] dateDeleted: ", id);
-        });
-
-        connection.on("activityAdded", (activity) => {
-          console.log("[SignalR] activityAdded: ", activity);
-        });
-
-        connection.on("activityDeleted", (id) => {
-          console.log("[SignalR] activityDeleted: ", id);
-        });
-
-        connection.on("lockActivity", (id) => {
-          console.log("[SignalR] lockActivity: ", id);
-        });
-
-        connection.on("activityUpdated", (update) => {
-          console.log("[SignalR] activityUpdated: ", update);
-        });
-
         // Start signalR connection
         await connection.start();
         console.log("Connected to SignalR hub");
@@ -123,7 +99,7 @@ function App() {
       }
     };
     startSignalRConnection();
-    
+
     // Cleanup on unmount
     return () => {
       if (connection) {

@@ -5,6 +5,7 @@ import { AddType, AddProps, PlanDate, PlanActivity } from '../helpers/interface'
 import { v4 as uuid } from 'uuid';
 import { Card, CardContent, IconButton, TextField } from '@mui/material';
 import AddDelButtons from './AddDelButtons';
+import { HubConnection } from '@microsoft/signalr';
 
 
 export interface DateCardProps {
@@ -12,6 +13,7 @@ export interface DateCardProps {
     planDate: PlanDate;
     delDateCardHandler: (id: Date) => void;
     addDateCardHandler: (props: AddProps) => void;
+    connection: HubConnection;
 }
 
 export interface ActCardProps {
@@ -19,7 +21,7 @@ export interface ActCardProps {
     content?: string;
 }
 
-export const DateCard = ({ userName, planDate, delDateCardHandler, addDateCardHandler }: DateCardProps) => {
+export const DateCard = ({ userName, planDate, delDateCardHandler, addDateCardHandler, connection }: DateCardProps) => {
     const [hoveredCard, setHoveredCard] = useState(false);
     const [cards, setCards] = useState(planDate.activities);
 
@@ -72,6 +74,16 @@ export const DateCard = ({ userName, planDate, delDateCardHandler, addDateCardHa
             }
         });
     };
+
+    useEffect(() => {
+        connection.on("dateAdded", (date) => {
+            console.log("[SignalR] dateAdded: ", date);
+        });
+
+        connection.on("dateDeleted", (id) => {
+            console.log("[SignalR] dateDeleted: ", id);
+        });
+    })
 
     return (
         <Card
