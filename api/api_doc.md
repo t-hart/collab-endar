@@ -19,7 +19,7 @@
 
 **Input**:
   ```json
-  { "planName": "string", "createdBy": "string" }
+  { "uuid": "string", "planName": "string", "createdBy": "string" }
   ```
 
 **Outputs**:
@@ -27,7 +27,32 @@
 - `400 Bad Request`: Missing fields.
 - `500 Internal Server Error`: Server issue.
 
-## 3. Delete Plan
+## 3. Get Plan
+**Route**: `/getPlan/{plan_id}`
+
+**Methods**: `GET`
+
+**Description**: Retrieves all data associated with a specific plan, including its dates and activities.
+
+**Outputs**:
+- `200 OK`: Retrieved plan information.
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "plan": {...},
+      "dates": [
+        {...}
+      ],
+      "activities": [
+        {...}
+      ]
+    }
+  }
+- `404 Not Found`: Plan not found.
+- `500 Internal Server Error`: Server issue.
+
+## 4. Delete Plan
 **Route**: `/deletePlan/{plan_id}`
 
 **Methods**: `DELETE`
@@ -39,7 +64,7 @@
 - `404 Not Found`: Plan not found.
 - `500 Internal Server Error`: Server issue.
 
-## 4. Add Date
+## 5. Add Date
 **Route**: `/addDate/{plan_id}`
 
 **Methods**: `POST`
@@ -48,7 +73,7 @@
 
 **Input**:
   ```json
-  { "yyyy-mm-dd": "string", "createdBy": "string" }
+  { "id": "string", "createdBy": "string" }
   ```
 
 **Outputs**:  
@@ -56,7 +81,7 @@
 - `400 Bad Request`: Missing fields.
 - `500 Internal Server Error`: Server issue.
 
-## 5. Delete Date
+## 6. Delete Date
 **Route**: `/deleteDate/{plan_id}/{date_id}`
 
 **Methods**: `DELETE`
@@ -68,7 +93,7 @@
 - `404 Not Found`: Date not found.
 - `500 Internal Server Error`: Server issue.
 
-## 6. Add Activity
+## 7. Add Activity
 **Route**: `/addActivity/{plan_id}/{date_id}`
 
 **Methods**: `POST`
@@ -77,7 +102,7 @@
 
 **Input**:
   ```json
-  { "activityIdx": "integer", "createdBy": "string" }
+  { "id": "integer", "createdBy": "string" }
   ```
 
 **Outputs**:  
@@ -85,7 +110,7 @@
 - `400 Bad Request`: Missing fields.
 - `500 Internal Server Error`: Server issue.
 
-## 7. Delete Activity
+## 8. Delete Activity
 **Route**: `/deleteActivity/{plan_id}/{date_id}/{activity_id}`
 
 **Methods**: `DELETE`
@@ -97,7 +122,7 @@
 - `404 Not Found`: Activity not found.
 - `500 Internal Server Error`: Server issue.
 
-## 8. Lock Activity
+## 9. Lock Activity
 **Route**: `/lockActivity/{plan_id}/{date_id}/{activity_id}`
 
 **Methods**: `POST`
@@ -109,7 +134,7 @@
 - `404 Not Found`: Activity not found.
 - `500 Internal Server Error`: Server issue.
 
-## 9. Update Activity
+## 10. Update Activity
 **Route**: `/updateActivity/{plan_id}/{date_id}/{activity_id}`
 
 **Methods**: `PATCH`
