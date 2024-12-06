@@ -165,7 +165,6 @@
   "id": "string",
   "type": "activity",
   "activityText": "string",
-  "activityIdx": "integer",
   "createdBy": "string",
   "createdAt": "timestamp",
   "lastUpdatedBy": "string",

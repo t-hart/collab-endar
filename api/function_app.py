@@ -396,7 +396,6 @@ def update_activity(req: func.HttpRequest, inputDoc: func.DocumentList, signalR:
             newDoc = dict(inputDoc)
             newDoc["id"] = activity_id
             newDoc["activityText"] = required_fields["activityText"]
-            newDoc["activityIdx"] = required_fields["activityIdx"]
             newDoc["lastUpdatedBy"] = required_fields["updatedBy"]
             newDoc["lastUpdatedAt"] = int(datetime.now(timezone.utc).timestamp() * 1000)
             updateDoc.set(func.Document.from_dict(newDoc))
@@ -411,7 +410,6 @@ def update_activity(req: func.HttpRequest, inputDoc: func.DocumentList, signalR:
         else:
             # Update existing doc
             inputDoc["activityText"] = required_fields["activityText"]
-            inputDoc["activityIdx"] = required_fields["activityIdx"]
             inputDoc["lastUpdatedBy"] = required_fields["updatedBy"]
             inputDoc["lastUpdatedAt"] = int(datetime.now(timezone.utc).timestamp() * 1000)
             updateDoc.set(inputDoc)
