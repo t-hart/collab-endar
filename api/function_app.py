@@ -95,6 +95,13 @@ def register_user(
 
 @app.route(route="createPlan", auth_level=func.AuthLevel.ANONYMOUS, methods=["POST"])
 @app.generic_output_binding(
+    arg_name="outputDocPlan",
+    type="cosmosDB",
+    connection_string_setting=COSMOS_CONN_STRING,
+    database_name=COSMOS_DB_NAME,
+    container_name=COSMOS_CONTAINER_NAME,
+)
+@app.generic_output_binding(
     arg_name="outputDoc",
     type="cosmosDB",
     connection_string_setting=COSMOS_CONN_STRING,
@@ -108,7 +115,10 @@ def register_user(
     connection_string_setting=SIGNALR_CONN_STRING,
 )
 def create_plan(
-    req: func.HttpRequest, outputDoc: func.Out[str], signalR: func.Out[str]
+    req: func.HttpRequest,
+    outputDocPlan: func.Out[str],
+    outputDoc: func.Out[str],
+    signalR: func.Out[str],
 ) -> func.HttpResponse:
     """
     Create new plan.
@@ -123,6 +133,7 @@ def create_plan(
             "uuid": plan_data.get("uuid"),
             "planName": plan_data.get("planName"),
             "createdBy": plan_data.get("createdBy"),
+            "dates": plan_data.get("dates"),
         }
         missing_fields = [x for x, y in required_fields.items() if not y]
         if missing_fields:
@@ -154,18 +165,28 @@ def create_plan(
             "lastUpdatedAt": current_time,
         }
 
+        docs = {"plan": document}
+        docs.update(
+            initialize_dates(
+                outputDoc=outputDoc,
+                plan_id=plan_id,
+                dates=plan_data["dates"],
+                created_by=created_by,
+            )
+        )
+
         logging.info(f"Attempting to save document to CosmosDB: {document}")
-        outputDoc.set(json.dumps(document))
+        outputDocPlan.set(json.dumps(document))
 
         # Send SignalR message to clients
         signalR.set(
             json.dumps(
-                {"target": "planCreated", "arguments": [document], "groupName": plan_id}
+                {"target": "planCreated", "arguments": [docs], "groupName": plan_id}
             )
         )
 
         return func.HttpResponse(
-            json.dumps({"status": "success", "plan": document}),
+            json.dumps({"status": "success", "data": docs}),
             mimetype="application/json",
         )
     except Exception as e:
@@ -321,40 +342,48 @@ def delete_plan(
         )
 
 
-def add_date_to_db(
-    outputDocDate: func.Out[str],
-    outputDocActivity: func.Out[str],
-    plan_id: str,
-    date_id: str,
-    activity_id: int,
-    created_by: str,
+def initialize_dates(
+    outputDoc: func.Out[str], plan_id: str, dates, created_by: str
 ) -> dict:
     current_time = int(datetime.now(timezone.utc).timestamp() * 1000)
-    date_id = f"date|{date_id}"
+    docs = []
+    dates_return_data = []
+    activities_return_data = []
+    for date in dates:
+        date_id = f"date|{date['id']}"
 
-    # Build date document
-    doc = {
-        "plan": plan_id,
-        "id": date_id,
-        "type": "date",
-        "createdBy": created_by,
-        "createdAt": current_time,
-        "lastUpdatedBy": created_by,
-        "lastUpdatedAt": current_time,
-    }
+        # Build date document
+        doc = {
+            "plan": plan_id,
+            "id": date_id,
+            "type": "date",
+            "createdBy": created_by,
+            "createdAt": current_time,
+            "lastUpdatedBy": created_by,
+            "lastUpdatedAt": current_time,
+        }
+        docs.append(doc)
+        dates_return_data.append(doc)
 
-    logging.info(f"Attempting to save document to CosmosDB: {doc}")
-    outputDocDate.set(json.dumps(doc))
+        activity_id = f"{date_id}|activity|0"
 
-    # Add empty activity to DB
-    _ = add_activity_to_db(
-        outputDoc=outputDocActivity,
-        plan_id=plan_id,
-        date_id=date_id,
-        activity_id=activity_id,
-        created_by=created_by,
-    )
-    return doc
+        # Build empty activity document
+        doc = {
+            "plan": plan_id,
+            "id": activity_id,
+            "type": "activity",
+            "activityText": "",
+            "createdBy": created_by,
+            "createdAt": current_time,
+            "lastUpdatedBy": created_by,
+            "lastUpdatedAt": current_time,
+        }
+        docs.append(doc)
+        activities_return_data.append(doc)
+
+    logging.info(f"Attempting to save documents to CosmosDB: {docs}")
+    outputDoc.set(json.dumps(docs))
+    return {"dates": dates_return_data, "activities": activities_return_data}
 
 
 @app.route(
@@ -368,20 +397,13 @@ def add_date_to_db(
     container_name=COSMOS_CONTAINER_NAME,
 )
 @app.generic_output_binding(
-    arg_name="outputDocActivity",
-    type="cosmosDB",
-    connection_string_setting=COSMOS_CONN_STRING,
-    database_name=COSMOS_DB_NAME,
-    container_name=COSMOS_CONTAINER_NAME,
-)
-@app.generic_output_binding(
     arg_name="signalR",
     type="signalR",
     hub_name=SIGNALR_HUB_NAME,
     connection_string_setting=SIGNALR_CONN_STRING,
 )
 def add_date(
-    req: func.HttpRequest, outputDocDate: func.Out[str], outputDocActivity: func.Out[str], signalR: func.Out[str]
+    req: func.HttpRequest, outputDocDate: func.Out[str], signalR: func.Out[str]
 ) -> func.HttpResponse:
     """
     Add new date item.
@@ -396,12 +418,9 @@ def add_date(
         required_fields = {
             "id": date_data.get("id"),
             "createdBy": date_data.get("createdBy"),
-            "activities": date_data.get("activities"),
         }
 
-        date_id = required_fields["id"]
         created_by = required_fields["createdBy"]
-        activities = required_fields["activities"]
 
         # request payload validation
         missing_fields = [x for x, y in required_fields.items() if not y]
@@ -416,37 +435,24 @@ def add_date(
                 status_code=400,
                 mimetype="application/json",
             )
-        elif len(activities) != 1:
-            return func.HttpResponse(
-                json.dumps(
-                    {
-                        "error": "New date must have only one activity",
-                        "numActivities": len(activities),
-                    }
-                ),
-                status_code=400,
-                mimetype="application/json",
-            )
 
         # Add date and the empty activity to DB
-        doc = add_date_to_db(
-            outputDocDate=outputDocDate,
-            outputDocActivity=outputDocActivity,
+        docs = initialize_dates(
+            outputDoc=outputDocDate,
             plan_id=plan_id,
-            date_id=date_id,
-            activity_id=activities[0]["id"],
+            dates=[date_data],
             created_by=created_by,
         )
 
         # Send SignalR message to clients
         signalR.set(
             json.dumps(
-                {"target": "dateAdded", "arguments": [doc], "groupName": plan_id}
+                {"target": "dateAdded", "arguments": [docs], "groupName": plan_id}
             )
         )
 
         return func.HttpResponse(
-            json.dumps({"status": "success", "date": dict(doc)}),
+            json.dumps({"status": "success", "data": docs}),
             mimetype="application/json",
         )
     except Exception as e:
@@ -617,13 +623,22 @@ def add_activity(
         # Add empty activity to DB
         created_by = required_fields["createdBy"]
         activity_id = required_fields["id"]
-        doc = add_activity_to_db(
-            outputDoc=outputDoc,
-            plan_id=plan_id,
-            date_id=date_id,
-            activity_id=activity_id,
-            created_by=created_by,
-        )
+
+        current_time = int(datetime.now(timezone.utc).timestamp() * 1000)
+        activity_id = f"{date_id}|activity|{activity_id}"
+        # Build empty activity document
+        doc = {
+            "plan": plan_id,
+            "id": activity_id,
+            "type": "activity",
+            "activityText": "",
+            "createdBy": created_by,
+            "createdAt": current_time,
+            "lastUpdatedBy": created_by,
+            "lastUpdatedAt": current_time,
+        }
+        logging.info(f"Attempting to save document to CosmosDB: {doc}")
+        outputDoc.set(json.dumps(doc))
 
         # Send SignalR message to clients
         signalR.set(json.dumps({"target": "activityAdded", "arguments": [doc]}))
