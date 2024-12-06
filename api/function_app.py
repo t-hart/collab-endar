@@ -322,7 +322,8 @@ def delete_plan(
 
 
 def add_date_to_db(
-    outputDoc: func.Out[str],
+    outputDocDate: func.Out[str],
+    outputDocActivity: func.Out[str],
     plan_id: str,
     date_id: str,
     activity_id: int,
@@ -330,7 +331,6 @@ def add_date_to_db(
 ) -> dict:
     current_time = int(datetime.now(timezone.utc).timestamp() * 1000)
     date_id = f"date|{date_id}"
-    activity_id = f"{date_id}|activity|{activity_id}"
 
     # Build date document
     doc = {
@@ -344,11 +344,11 @@ def add_date_to_db(
     }
 
     logging.info(f"Attempting to save document to CosmosDB: {doc}")
-    outputDoc.set(json.dumps(doc))
+    outputDocDate.set(json.dumps(doc))
 
     # Add empty activity to DB
     _ = add_activity_to_db(
-        outputDoc=outputDoc,
+        outputDoc=outputDocActivity,
         plan_id=plan_id,
         date_id=date_id,
         activity_id=activity_id,
@@ -361,7 +361,14 @@ def add_date_to_db(
     route="addDate/{plan_id}", auth_level=func.AuthLevel.ANONYMOUS, methods=["POST"]
 )
 @app.generic_output_binding(
-    arg_name="outputDoc",
+    arg_name="outputDocDate",
+    type="cosmosDB",
+    connection_string_setting=COSMOS_CONN_STRING,
+    database_name=COSMOS_DB_NAME,
+    container_name=COSMOS_CONTAINER_NAME,
+)
+@app.generic_output_binding(
+    arg_name="outputDocActivity",
     type="cosmosDB",
     connection_string_setting=COSMOS_CONN_STRING,
     database_name=COSMOS_DB_NAME,
@@ -374,7 +381,7 @@ def add_date_to_db(
     connection_string_setting=SIGNALR_CONN_STRING,
 )
 def add_date(
-    req: func.HttpRequest, outputDoc: func.Out[str], signalR: func.Out[str]
+    req: func.HttpRequest, outputDocDate: func.Out[str], outputDocActivity: func.Out[str], signalR: func.Out[str]
 ) -> func.HttpResponse:
     """
     Add new date item.
@@ -423,7 +430,8 @@ def add_date(
 
         # Add date and the empty activity to DB
         doc = add_date_to_db(
-            outputDoc=outputDoc,
+            outputDocDate=outputDocDate,
+            outputDocActivity=outputDocActivity,
             plan_id=plan_id,
             date_id=date_id,
             activity_id=activities[0]["id"],
@@ -490,6 +498,8 @@ def delete_date(
         # Get route parameters
         plan_id = req.route_params.get("plan_id")
         date_id = req.route_params.get("date_id")
+        print(plan_id)
+        print(date_id)
 
         if not inputDoc:
             return func.HttpResponse(

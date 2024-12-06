@@ -142,7 +142,7 @@ function App() {
 
     (async () => {
       try {
-        const response = await fetch(`/api/deleteDate/${planId}/${getDateString(deletedDate)}`, {
+        const response = await fetch(`/api/deleteDate/${planId}/date|${getDateString(deletedDate)}`, {
           method: "DELETE",
         });
         if (!response.ok) {
