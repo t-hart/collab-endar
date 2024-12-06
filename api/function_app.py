@@ -1,7 +1,6 @@
 import json
 import logging
 from datetime import datetime, timezone
-
 import azure.functions as func
 
 # Initialize function app
@@ -19,9 +18,50 @@ def negotiate(req: func.HttpRequest, connectionInfo: str) -> func.HttpResponse:
     """
     Handle SignalR negotiate requests.
     """
-    logging.info(f"Negotiate function called. Method: {req.method}")
-    logging.info(f"Request headers: {dict(req.headers)}")
-    return func.HttpResponse(connectionInfo)
+    try:
+        logging.info("Within negotiate; returning connection info")
+        return func.HttpResponse(connectionInfo)
+    
+    except Exception as e:
+        logging.error(f"Error in negotiate: {str(e)}")
+        return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500, mimetype="application/json")
+
+@app.route(route="registerUser", auth_level=func.AuthLevel.ANONYMOUS, methods=["GET", "POST", "OPTIONS"])
+@app.generic_input_binding(arg_name="connectionInfo", type="signalRConnectionInfo", hubName=SIGNALR_HUB_NAME, connectionStringSetting=SIGNALR_CONN_STRING)
+@app.generic_output_binding(arg_name="signalR", type="signalR", hub_name=SIGNALR_HUB_NAME, connection_string_setting=SIGNALR_CONN_STRING)
+def register_user(req: func.HttpRequest, connectionInfo: str, signalR: func.Out[str]) -> func.HttpResponse:
+    """
+    Handle SignalR user group registration.
+    """
+    try:
+        logging.info("Starting register_user function")
+
+        plan_id = req.params.get("planId")
+        connectionId = req.params.get("connectionId")
+        required_fields = {
+            "plan_id": plan_id,
+            "connectionId": connectionId
+        }
+        missing_fields = [x for x, y in required_fields.items() if not y]
+        if missing_fields:
+            return func.HttpResponse(
+                json.dumps({"error": "Missing required fields in URL request", "missing": missing_fields}),
+                status_code=400,
+                mimetype="application/json"
+            )
+        
+        action = {
+            "connectionId": connectionId,
+            "groupName": plan_id,
+            "action": "add"
+        }
+        signalR.set(json.dumps(action))
+        logging.info(f"Added connection '{connectionId}' to group '{plan_id}'")
+        return func.HttpResponse(status_code=200)
+    
+    except Exception as e:
+        logging.error(f"Error in register_user: {str(e)}")
+        return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500, mimetype="application/json")
 
 @app.route(route="createPlan", auth_level=func.AuthLevel.ANONYMOUS, methods=["POST"])
 @app.generic_output_binding(arg_name="outputDoc", type="cosmosDB", connection_string_setting=COSMOS_CONN_STRING, database_name=COSMOS_DB_NAME, container_name=COSMOS_CONTAINER_NAME)
@@ -70,7 +110,7 @@ def create_plan(req: func.HttpRequest, outputDoc: func.Out[str], signalR: func.O
         outputDoc.set(json.dumps(document))
 
         # Send SignalR message to clients
-        signalR.set(json.dumps({"target": "planCreated", "arguments": [document]}))
+        signalR.set(json.dumps({"target": "planCreated", "arguments": [document], "groupName": plan_id}))
 
         return func.HttpResponse(
             json.dumps({"status": "success", "plan": document}),
@@ -143,7 +183,7 @@ def delete_plan(req: func.HttpRequest, inputDoc: func.DocumentList, signalR: fun
         logging.info(f"Document marked for deletion: {plan_id}")
 
         # Send SignalR message to clients
-        signalR.set(json.dumps({"target": "planDeleted", "arguments": [{"id": plan_id}]}))
+        signalR.set(json.dumps({"target": "planDeleted", "arguments": [{"id": plan_id}], "groupName": plan_id}))
 
         return func.HttpResponse(
             json.dumps({"status": "success", "id": plan_id}),
@@ -198,7 +238,7 @@ def add_date(req: func.HttpRequest, outputDoc: func.Out[str], signalR: func.Out[
         outputDoc.set(json.dumps(doc))
 
         # Send SignalR message to clients
-        signalR.set(json.dumps({"target": "dateAdded", "arguments": [doc]}))
+        signalR.set(json.dumps({"target": "dateAdded", "arguments": [doc], "groupName": plan_id}))
 
         return func.HttpResponse(
             json.dumps({"status": "success", "date": dict(doc)}),
@@ -238,7 +278,7 @@ def delete_date(req: func.HttpRequest, inputDoc: func.DocumentList, signalR: fun
         logging.info(f"Document marked for deletion: {date_id}")
 
         # Send SignalR message to clients
-        signalR.set(json.dumps({"target": "dateDeleted", "arguments": [{"id": date_id}]}))
+        signalR.set(json.dumps({"target": "dateDeleted", "arguments": [{"id": date_id}], "groupName": plan_id}))
 
         return func.HttpResponse(
             json.dumps({"status": "success", "id": date_id}),
@@ -337,7 +377,7 @@ def delete_activity(req: func.HttpRequest, inputDoc: func.DocumentList, signalR:
         logging.info(f"Document marked for deletion: {activity_id}")
 
         # Send SignalR message to clients
-        signalR.set(json.dumps({"target": "activityDeleted", "arguments": [{"id": activity_id}]}))
+        signalR.set(json.dumps({"target": "activityDeleted", "arguments": [{"id": activity_id}], "groupName": plan_id}))
 
         return func.HttpResponse(
             json.dumps({"status": "success", "id": activity_id}),
@@ -372,7 +412,7 @@ def lock_activity(req: func.HttpRequest, inputDoc: func.DocumentList, signalR: f
         logging.info(f"Document marked for deletion: {activity_id}")
 
         # Send SignalR message to clients
-        signalR.set(json.dumps({"target": "lockActivity", "arguments": [{"id": activity_id}]}))
+        signalR.set(json.dumps({"target": "lockActivity", "arguments": [{"id": activity_id}], "groupName": plan_id}))
 
         return func.HttpResponse(
             json.dumps({"status": "success", "id": activity_id}),
@@ -454,7 +494,7 @@ def update_activity(req: func.HttpRequest, inputDoc: func.DocumentList, signalR:
             responseDoc = dict(inputDoc)
 
         # Send SignalR message to clients
-        signalR.set(json.dumps({"target": "activityUpdated", "arguments": [{"activity": responseDoc}]}))
+        signalR.set(json.dumps({"target": "activityUpdated", "arguments": [{"new": responseDoc, "old": inputDoc}], "groupName": plan_id}))
 
         return func.HttpResponse(
             json.dumps({"status": "success", "activity": responseDoc}),
