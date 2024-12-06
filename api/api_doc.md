@@ -19,7 +19,7 @@
 
 **Input**:
   ```json
-  { "planName": "string", "createdBy": "string" }
+  { "uuid": "string", "planName": "string", "createdBy": "string" }
   ```
 
 **Outputs**:

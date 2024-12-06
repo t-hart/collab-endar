@@ -1,6 +1,5 @@
 import json
 import logging
-import uuid
 from datetime import datetime, timezone
 
 import azure.functions as func
@@ -38,6 +37,7 @@ def create_plan(req: func.HttpRequest, outputDoc: func.Out[str], signalR: func.O
         plan_data = req.get_json()
 
         required_fields = {
+            "uuid": plan_data.get("uuid"),
             "planName": plan_data.get("planName"),
             "createdBy": plan_data.get("createdBy")
         }
@@ -50,7 +50,8 @@ def create_plan(req: func.HttpRequest, outputDoc: func.Out[str], signalR: func.O
             )
 
         # Initialize plan document
-        plan_id = f"plan_{str(uuid.uuid4())[:8]}"
+        uuid = required_fields["uuid"]
+        plan_id = f"plan_{uuid}"
         plan_name = plan_data["planName"]
         created_by = plan_data["createdBy"]
         current_time = int(datetime.now(timezone.utc).timestamp() * 1000)
@@ -83,7 +84,7 @@ def create_plan(req: func.HttpRequest, outputDoc: func.Out[str], signalR: func.O
 @app.generic_input_binding(arg_name="planDoc", type="cosmosDB", connection_string_setting=COSMOS_CONN_STRING, database_name=COSMOS_DB_NAME, container_name=COSMOS_CONTAINER_NAME, id="{plan_id}", partitionKey="{plan_id}")
 @app.generic_input_binding(arg_name="datesDocs", type="cosmosDB", connection_string_setting=COSMOS_CONN_STRING, database_name=COSMOS_DB_NAME, container_name=COSMOS_CONTAINER_NAME, sql_query="SELECT * FROM c WHERE c.type='date'", partitionKey="{plan_id}")
 @app.generic_input_binding(arg_name="activitiesDocs", type="cosmosDB", connection_string_setting=COSMOS_CONN_STRING, database_name=COSMOS_DB_NAME, container_name=COSMOS_CONTAINER_NAME, sql_query="SELECT * FROM c WHERE c.type='activity'", partitionKey="{plan_id}")
-def get_plan(req: func.HttpRequest, planDoc: func.DocumentList, datesDocs: func.DocumentList, activitiesDocs: func.DocumentList) -> func.HttpResponse:
+def get_plan(_: func.HttpRequest, planDoc: func.DocumentList, datesDocs: func.DocumentList, activitiesDocs: func.DocumentList) -> func.HttpResponse:
     """
     Get all plan data (includes all dates and activities).
     """
