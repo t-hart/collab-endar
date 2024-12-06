@@ -1,8 +1,0 @@
-{
-  "IsEncrypted": false,
-  "Values": {
-    "FUNCTIONS_WORKER_RUNTIME": "python",
-    "AzureSignalRConnectionString": "Endpoint=https://xxx...",
-    "CosmosDB": "AccountEndpoint=https://xxx..."
-  }
-}
