@@ -43,7 +43,8 @@ export function createBasePlan(planName: string, createdBy: string, startDate: s
 
   const plan: Plan = {
     planMetadata: {
-      planId: uuid(),
+      // planId: uuid(),
+      planId: "f7873135-5f9d-4394-b823-a599a94a81f6",
       planName: planName,
       createdBy: createdBy,
     },
@@ -74,4 +75,12 @@ export function getDateString(date: Date): string {
 
 export interface ErrorResponse {
   error: string;
+}
+
+export function stringifyPlanDate(date: PlanDate): string {
+  const formattedData = {
+    ...date,
+    id: getDateString(date.id)
+  };
+  return JSON.stringify(formattedData);
 }

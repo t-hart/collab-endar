@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { HubConnectionBuilder, HubConnection } from '@microsoft/signalr';
 import { DateCard } from "./components/DateCard"
 import { Stack } from '@mui/material';
-import { AddType, AddProps, createBasePlan, PlanDate, createPlanDate, getDateString, ErrorResponse } from './helpers/interface';
+import { AddType, AddProps, createBasePlan, PlanDate, createPlanDate, getDateString, ErrorResponse, stringifyPlanDate } from './helpers/interface';
 import { addDays, subDays, differenceInDays } from 'date-fns';
 
 
@@ -161,9 +161,11 @@ function App() {
 
     (async () => {
       try {
+        console.log(`addedDate.id type: ${addedDate.id instanceof Date}`)
+
         const response = await fetch(`/api/addDate/${planId}`, {
           method: "POST",
-          body: JSON.stringify(addedDate)
+          body: stringifyPlanDate(addedDate),
         });
         if (!response.ok) {
           const data = await response.json()
