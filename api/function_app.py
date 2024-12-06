@@ -79,6 +79,42 @@ def create_plan(req: func.HttpRequest, outputDoc: func.Out[str], signalR: func.O
         logging.error(f"Error in create_plan: {str(e)}")
         return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500, mimetype="application/json")
 
+@app.route(route="getPlan/{plan_id}", auth_level=func.AuthLevel.ANONYMOUS, methods=["GET"])
+@app.generic_input_binding(arg_name="planDoc", type="cosmosDB", connection_string_setting=COSMOS_CONN_STRING, database_name=COSMOS_DB_NAME, container_name=COSMOS_CONTAINER_NAME, id="{plan_id}", partitionKey="{plan_id}")
+@app.generic_input_binding(arg_name="datesDocs", type="cosmosDB", connection_string_setting=COSMOS_CONN_STRING, database_name=COSMOS_DB_NAME, container_name=COSMOS_CONTAINER_NAME, sql_query="SELECT * FROM c WHERE c.type='date'", partitionKey="{plan_id}")
+@app.generic_input_binding(arg_name="activitiesDocs", type="cosmosDB", connection_string_setting=COSMOS_CONN_STRING, database_name=COSMOS_DB_NAME, container_name=COSMOS_CONTAINER_NAME, sql_query="SELECT * FROM c WHERE c.type='activity'", partitionKey="{plan_id}")
+def get_plan(req: func.HttpRequest, planDoc: func.DocumentList, datesDocs: func.DocumentList, activitiesDocs: func.DocumentList) -> func.HttpResponse:
+    """
+    Get all plan data (includes all dates and activities).
+    """
+    try:
+        logging.info("Starting get_plan function")
+
+        # Validate plan existence
+        if not planDoc:
+            return func.HttpResponse(
+                json.dumps({"error": "Plan not found"}),
+                status_code=404,
+                mimetype="application/json"
+            )
+        
+        planDoc = planDoc[0]
+
+        # Assemble response
+        response = {
+            "plan": dict(planDoc),
+            "dates": [dict(date) for date in datesDocs],
+            "activities": [dict(activity) for activity in activitiesDocs]
+        }
+
+        return func.HttpResponse(
+            json.dumps({"status": "success", "data": response}),
+            mimetype="application/json",
+        )
+    except Exception as e:
+        logging.error(f"Error in get_plan: {str(e)}")
+        return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500, mimetype="application/json")
+
 @app.route(route="deletePlan/{plan_id}", methods=["DELETE"], auth_level=func.AuthLevel.ANONYMOUS)
 @app.generic_input_binding(arg_name="inputDoc", type="cosmosDB", connection_string_setting=COSMOS_CONN_STRING, database_name=COSMOS_DB_NAME, container_name=COSMOS_CONTAINER_NAME, id="{plan_id}", partitionKey="{plan_id}")
 @app.generic_output_binding(arg_name="deleteDoc", type="cosmosDB", connection_string_setting=COSMOS_CONN_STRING, database_name=COSMOS_DB_NAME, container_name=COSMOS_CONTAINER_NAME)
@@ -132,7 +168,7 @@ def add_date(req: func.HttpRequest, outputDoc: func.Out[str], signalR: func.Out[
         date_data = req.get_json()
 
         required_fields = {
-            "yyyy-mm-dd": date_data.get("yyyy-mm-dd"),
+            "id": date_data.get("id"),
             "createdBy": date_data.get("createdBy")
         }
         missing_fields = [x for x, y in required_fields.items() if not y]
@@ -144,9 +180,9 @@ def add_date(req: func.HttpRequest, outputDoc: func.Out[str], signalR: func.Out[
             )
         
         # Build date document
-        yyyy_mm_dd = required_fields["yyyy-mm-dd"]
+        id = required_fields["id"]
         created_by = required_fields["createdBy"]
-        date_id = f"date|{yyyy_mm_dd}"
+        date_id = f"date|{id}"
         current_time = int(datetime.now(timezone.utc).timestamp() * 1000)
         doc = {
             "plan": plan_id,
@@ -229,7 +265,7 @@ def add_activity(req: func.HttpRequest, outputDoc: func.Out[str], signalR: func.
 
         # Validate required JSON fields
         required_fields = {
-            "activityIdx": activity_data.get("activityIdx"),
+            "id": activity_data.get("id"),
             "createdBy": activity_data.get("createdBy")
         }
         missing_fields = [x for x, y in required_fields.items() if not y]
@@ -243,8 +279,8 @@ def add_activity(req: func.HttpRequest, outputDoc: func.Out[str], signalR: func.
         # Build empty activity document
         current_time = int(datetime.now(timezone.utc).timestamp() * 1000)
         created_by = required_fields["createdBy"]
-        activity_idx = required_fields["activityIdx"]
-        activity_id = f"{date_id}|activity|{activity_idx}"
+        id = required_fields["id"]
+        activity_id = f"{date_id}|activity|{id}"
         doc = {
             "plan": plan_id,
             "id": activity_id,
