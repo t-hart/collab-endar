@@ -84,7 +84,7 @@ def create_plan(req: func.HttpRequest, outputDoc: func.Out[str], signalR: func.O
 @app.generic_input_binding(arg_name="planDoc", type="cosmosDB", connection_string_setting=COSMOS_CONN_STRING, database_name=COSMOS_DB_NAME, container_name=COSMOS_CONTAINER_NAME, id="{plan_id}", partitionKey="{plan_id}")
 @app.generic_input_binding(arg_name="datesDocs", type="cosmosDB", connection_string_setting=COSMOS_CONN_STRING, database_name=COSMOS_DB_NAME, container_name=COSMOS_CONTAINER_NAME, sql_query="SELECT * FROM c WHERE c.type='date'", partitionKey="{plan_id}")
 @app.generic_input_binding(arg_name="activitiesDocs", type="cosmosDB", connection_string_setting=COSMOS_CONN_STRING, database_name=COSMOS_DB_NAME, container_name=COSMOS_CONTAINER_NAME, sql_query="SELECT * FROM c WHERE c.type='activity'", partitionKey="{plan_id}")
-def get_plan(_: func.HttpRequest, planDoc: func.DocumentList, datesDocs: func.DocumentList, activitiesDocs: func.DocumentList) -> func.HttpResponse:
+def get_plan(req: func.HttpRequest, planDoc: func.DocumentList, datesDocs: func.DocumentList, activitiesDocs: func.DocumentList) -> func.HttpResponse:
     """
     Get all plan data (includes all dates and activities).
     """
@@ -98,7 +98,6 @@ def get_plan(_: func.HttpRequest, planDoc: func.DocumentList, datesDocs: func.Do
                 status_code=404,
                 mimetype="application/json"
             )
-        
         planDoc = planDoc[0]
 
         # Assemble response
