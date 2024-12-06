@@ -1,2 +1,2 @@
 
-export const ACTV_CARD_STEP = 1000;
+export const ACTV_CARD_SPREAD = 100000;
