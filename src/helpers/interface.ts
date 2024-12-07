@@ -34,6 +34,45 @@ export interface PlanActivity {
   activityText?: string;
 }
 
+export async function getPlan(planId: string): Promise<Plan> {
+  
+  // Get plan from cosmos db
+  const response = await fetch(`/api/getPlan/${planId}`);
+  if (!response.ok) {
+    throw new Error(`Error fetching plan: ${response.statusText}`);
+  }
+  const data: any = await response.json();
+  const { plan, dates, activities } = data.data;
+
+  const planDates: PlanDate[] = dates.map((date: any) => ({
+    // Parse date from date_id string
+    id: new Date(date.id.split('|')[1]),
+    createdBy: date.createdBy,
+    
+    // Loop through activities and assign to this date if date_id in activity_id
+    activities: activities
+      .filter((activity: any) => activity.id.startsWith(`${date.id}`))
+      .map((activity: any) => ({
+        // Parse activity id from activity_id string
+        id: parseInt(activity.id.split('|')[3]),
+        createdBy: activity.createdBy,
+        activityText: activity.activityText,
+      })),
+  })).sort((a: PlanDate, b: PlanDate) => a.id.getTime() - b.id.getTime());
+
+  const requestedPlan: Plan = {
+    planMetadata: {
+      planId: planId,
+      planName: plan.planName,
+      createdBy: plan.createdBy,
+    },
+    dates: planDates,
+  };
+
+  console.log("Requested plan: ", requestedPlan);
+  return requestedPlan;
+}
+
 export function createBasePlan(planName: string, createdBy: string, startDate: string, endDate: string): Plan {
 
   const dateArr = eachDayOfInterval({ start: new Date(startDate), end: new Date(endDate) })

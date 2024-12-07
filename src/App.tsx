@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { HubConnectionBuilder, HubConnection } from '@microsoft/signalr';
 import { DateCard } from "./components/DateCard"
 import { Stack } from '@mui/material';
-import { AddType, AddProps, createBasePlan, PlanDate, createPlanDate, getDateString, ErrorResponse, stringifyPlanDate, DateMsg } from './helpers/interface';
+import { AddType, AddProps, Plan, createBasePlan, PlanDate, getPlan, createPlanDate, getDateString, ErrorResponse, stringifyPlanDate, DateMsg } from './helpers/interface';
 import { addDays, subDays, differenceInDays } from 'date-fns';
 
 
@@ -13,10 +13,11 @@ const userName = "Team5-user-" + Math.floor(Math.random() * 1000)
 
 function App() {
   console.log("User name: ", userName)
-  const plan = createBasePlan("some_plan_name", userName, "2025-01-05", "2025-01-09");
-  const planId = plan.planMetadata.planId
 
-  const [dates, setDates] = useState(plan.dates);
+  const planId = "f7873135-5f9d-4394-b823-a599a94a81f6-9999999"
+  //const plan = createBasePlan("some_plan_name", userName, "2025-01-05", "2025-01-09");
+  const [plan, setPlan] = useState<Plan | null>(null);
+  const [dates, setDates] = useState<PlanDate[]>([]);
   const [addedDate, setAddedDate] = useState<PlanDate | null>();
   const [deletedDate, setDeletedDate] = useState<Date | null>();
   const [connection, setConnection] = useState<HubConnection | null>(null);
@@ -64,7 +65,18 @@ function App() {
     })
   };
 
-
+  useEffect(() => {
+    const fetchPlan = async () => {
+      try {
+        const fetchedPlan = await getPlan(planId);
+        setPlan(fetchedPlan);
+        setDates(fetchedPlan.dates);
+      } catch (error) {
+        console.error("Failed to fetch plan:", error);
+      }
+    };
+    fetchPlan();
+  }, [planId]);
 
   useEffect(() => {
 
@@ -224,6 +236,12 @@ function App() {
     return (
       <div>
         <h1> {error}</h1>
+      </div>
+    )
+  } else if (!plan) {
+    return (
+      <div>
+        <h1> Loading plan ...</h1>
       </div>
     )
   } else if (!connection) {
