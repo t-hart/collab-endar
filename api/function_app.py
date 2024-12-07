@@ -33,7 +33,7 @@ def negotiate(req: func.HttpRequest, connectionInfo: str) -> func.HttpResponse:
         return func.HttpResponse(connectionInfo)
 
     except Exception as e:
-        logging.error(f"Error in negotiate: {str(e)}")
+        logging.exception("Error in negotiate")
         return func.HttpResponse(
             json.dumps({"error": str(e)}), status_code=500, mimetype="application/json"
         )
@@ -87,7 +87,7 @@ def register_user(
         return func.HttpResponse(status_code=200)
 
     except Exception as e:
-        logging.error(f"Error in register_user: {str(e)}")
+        logging.exception("Error in register_user")
         return func.HttpResponse(
             json.dumps({"error": str(e)}), status_code=500, mimetype="application/json"
         )
@@ -190,7 +190,7 @@ def create_plan(
             mimetype="application/json",
         )
     except Exception as e:
-        logging.error(f"Error in create_plan: {str(e)}")
+        logging.exception("Error in create_plan")
         return func.HttpResponse(
             json.dumps({"error": str(e)}), status_code=500, mimetype="application/json"
         )
@@ -259,7 +259,7 @@ def get_plan(
             mimetype="application/json",
         )
     except Exception as e:
-        logging.error(f"Error in get_plan: {str(e)}")
+        logging.exception("Error in get_plan")
         return func.HttpResponse(
             json.dumps({"error": str(e)}), status_code=500, mimetype="application/json"
         )
@@ -336,7 +336,7 @@ def delete_plan(
             mimetype="application/json",
         )
     except Exception as e:
-        logging.error(f"Error in delete_plan: {str(e)}")
+        logging.exception("Error in delete_plan")
         return func.HttpResponse(
             json.dumps({"error": str(e)}), status_code=500, mimetype="application/json"
         )
@@ -457,7 +457,7 @@ def add_date(
             mimetype="application/json",
         )
     except Exception as e:
-        logging.error(f"Error in add_date: {str(e)}")
+        logging.exception("Error in add_date")
         return func.HttpResponse(
             json.dumps({"error": str(e)}), status_code=500, mimetype="application/json"
         )
@@ -563,7 +563,7 @@ def delete_date(
             mimetype="application/json",
         )
     except Exception as e:
-        logging.error(f"Error in delete_date: {str(e)}")
+        logging.exception("Error in delete_date")
         return func.HttpResponse(
             json.dumps({"error": str(e)}), status_code=500, mimetype="application/json"
         )
@@ -656,7 +656,7 @@ def add_activity(
             mimetype="application/json",
         )
     except Exception as e:
-        logging.error(f"Error in add_activity: {str(e)}")
+        logging.exception("Error in add_activity")
         return func.HttpResponse(
             json.dumps({"error": str(e)}), status_code=500, mimetype="application/json"
         )
@@ -742,7 +742,7 @@ def delete_activity(
             mimetype="application/json",
         )
     except Exception as e:
-        logging.error(f"Error in delete_activity: {str(e)}")
+        logging.exception("Error in delete_activity")
         return func.HttpResponse(
             json.dumps({"error": str(e)}), status_code=500, mimetype="application/json"
         )
@@ -811,7 +811,7 @@ def lock_activity(
             mimetype="application/json",
         )
     except Exception as e:
-        logging.error(f"Error in lock_activity: {str(e)}")
+        logging.exception("Error in lock_activity")
         return func.HttpResponse(
             json.dumps({"error": str(e)}), status_code=500, mimetype="application/json"
         )
@@ -828,7 +828,7 @@ def lock_activity(
     connection_string_setting=COSMOS_CONN_STRING,
     database_name=COSMOS_DB_NAME,
     container_name=COSMOS_CONTAINER_NAME,
-    id="{activity_id}",
+    id="date|{date_id}|activity|{activity_id}",
     partitionKey="{plan_id}",
 )
 @app.generic_output_binding(
@@ -869,11 +869,11 @@ def update_activity(
         date_id = req.route_params.get("date_id")
         activity_id = req.route_params.get("activity_id")
         activity_data = req.get_json()
+        logging.info(f"activity_data: {activity_data}")
 
         # Validate required JSON fields
         required_fields = {
             "activityText": activity_data.get("activityText"),
-            "activityIdx": activity_data.get("activityIdx"),
             "updatedBy": activity_data.get("updatedBy"),
         }
         missing_fields = [x for x, y in required_fields.items() if not y]
@@ -903,13 +903,12 @@ def update_activity(
         # Determine if activity needs to be moved
         inputDoc = list(inputDoc)[0]
         prev_activity_id = inputDoc.get("id")
-        activity_idx = required_fields["activityIdx"]
-        activity_id = f"{date_id}|activity|{activity_idx}"
+        activity_id_db = f"date|{date_id}|activity|{activity_id}"
 
-        if activity_id != prev_activity_id:
+        if activity_id_db != prev_activity_id:
             # Move activity
             newDoc = dict(inputDoc)
-            newDoc["id"] = activity_id
+            newDoc["id"] = activity_id_db
             newDoc["activityText"] = required_fields["activityText"]
             newDoc["lastUpdatedBy"] = required_fields["updatedBy"]
             newDoc["lastUpdatedAt"] = int(datetime.now(timezone.utc).timestamp() * 1000)
@@ -920,7 +919,7 @@ def update_activity(
             oldDoc["ttl"] = 1
             deleteDoc.set(func.Document.from_dict(oldDoc))
 
-            logging.info(f"Activity moved: {prev_activity_id} -> {activity_id}")
+            logging.info(f"Activity moved: {prev_activity_id} -> {activity_id_db}")
             responseDoc = newDoc
         else:
             # Update existing doc
@@ -931,15 +930,16 @@ def update_activity(
             )
             updateDoc.set(inputDoc)
 
-            logging.info(f"Activity updated: {activity_id}")
+            logging.info(f"Activity updated: {activity_id_db}")
             responseDoc = dict(inputDoc)
 
         # Send SignalR message to clients
+        sync_args = [{"activityText": required_fields["activityText"],"id": activity_id, "dateId": date_id, "byUser": required_fields["updatedBy"]}]
         signalR.set(
             json.dumps(
                 {
                     "target": "activityUpdated",
-                    "arguments": [{"new": responseDoc, "old": inputDoc}],
+                    "arguments": sync_args,
                     "groupName": plan_id,
                 }
             )
@@ -950,7 +950,7 @@ def update_activity(
             mimetype="application/json",
         )
     except Exception as e:
-        logging.error(f"Error in update_activity: {str(e)}")
+        logging.exception("Error in update_activity")
         return func.HttpResponse(
             json.dumps({"error": str(e)}), status_code=500, mimetype="application/json"
         )
