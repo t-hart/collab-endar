@@ -169,11 +169,13 @@ function App() {
     // Register handlers
     connection.on("dateAdded", addDateSyncHandler);
     connection.on("dateDeleted", deleteDateSyncHandler);
+    console.log("Registered event handlers in app card")
 
     // Clean up handlers when unmounted
     return () => {
       connection.off("dateAdded", addDateSyncHandler);
       connection.off("dateDeleted", deleteDateSyncHandler);
+      console.log("Cleaned up event handlers in app card")
     }
   }
     , [connection])

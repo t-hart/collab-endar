@@ -170,11 +170,13 @@ export const DateCard = ({ userName, planId, planDate, delDateCardHandler, addDa
         // Register handlers
         connection.on("activityAdded", addActivitySyncHandler);
         connection.on("activityDeleted", deleteActivitySyncHandler);
+        console.log(`Registered event handlers in date card ${dateStr}`)
 
         // Cleanup when unmounted
         return () => {
             connection.off("activityAdded", addActivitySyncHandler);
             connection.off("activityDeleted", deleteActivitySyncHandler);
+            console.log(`Cleaned up event handlers in date card ${dateStr}`)
         };
     }, [])
 
@@ -203,7 +205,10 @@ export const DateCard = ({ userName, planId, planDate, delDateCardHandler, addDa
                     {activities.map(card => (
                         <ActivityCard
                             key={card.id}
+                            userName={userName}
                             id={card.id}
+                            planDateStr={dateStr}
+                            planId={planId}
                             content={card.activityText ? card.activityText : undefined}
                             delActvCardHandler={deleteActivityHandler}
                             addActvCardHandler={addActivityHandler}
