@@ -84,6 +84,11 @@ export interface ActivityMsg {
   activityText?: string
 }
 
+export interface DateMsg {
+  id: string
+  byUser: string
+}
+
 export function stringifyPlanDate(date: PlanDate): string {
   const formattedDate = {
     id: getDateString(date.id),
