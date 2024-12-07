@@ -477,6 +477,15 @@ def add_date(
     id="date|{date_id}",
     partitionKey="{plan_id}",
 )
+@app.generic_input_binding(
+    arg_name="activityDocs",
+    type="cosmosDB",
+    connection_string_setting=COSMOS_CONN_STRING,
+    database_name=COSMOS_DB_NAME,
+    container_name=COSMOS_CONTAINER_NAME,
+    sql_query="SELECT * FROM c WHERE c.type='activity'",
+    partitionKey="{plan_id}",
+)
 @app.generic_output_binding(
     arg_name="deleteDoc",
     type="cosmosDB",
@@ -495,18 +504,18 @@ def delete_date(
     inputDoc: func.DocumentList,
     signalR: func.Out[str],
     deleteDoc: func.Out[func.Document],
+    activityDocs: func.DocumentList,
 ) -> func.HttpResponse:
     """
     Delete date item.
     """
+    print(activityDocs)
     try:
         logging.info("Starting delete_date function")
 
         # Get route parameters
         plan_id = req.route_params.get("plan_id")
         date_id = req.route_params.get("date_id")
-        logging.info(plan_id)
-        logging.info(date_id)
 
         if not inputDoc:
             return func.HttpResponse(
@@ -518,11 +527,23 @@ def delete_date(
             )
 
         # Mark doc for deletion
+        docs_to_delete = []
         inputDoc = list(inputDoc)[0]
         inputDoc["ttl"] = 1
-        deleteDoc.set(inputDoc)
+        docs_to_delete.append(func.Document.from_dict(inputDoc))
 
-        logging.info(f"Document marked for deletion: {date_id}")
+        logging.info(f"Date document marked for deletion: {date_id}")
+
+        for activityDoc in activityDocs:
+            # This is probably bad, but seem to be limited by CosmosDB, our at least our schema
+            if activityDoc["id"].startswith(f"date|{date_id}|activity|"):
+                activityDoc["ttl"] = 1
+                logging.info(
+                    f"Activity document marked for deletion: {activityDoc['id']}"
+                )
+                docs_to_delete.append(func.Document.from_dict(activityDoc))
+
+        deleteDoc.set(docs_to_delete)
 
         # Send SignalR message to clients
         sync_args = [{"id": date_id}]
@@ -545,31 +566,6 @@ def delete_date(
         return func.HttpResponse(
             json.dumps({"error": str(e)}), status_code=500, mimetype="application/json"
         )
-
-
-def add_activity_to_db(
-    outputDoc: func.Out[str],
-    plan_id: str,
-    date_id: str,
-    activity_id: int,
-    created_by: str,
-) -> dict:
-    current_time = int(datetime.now(timezone.utc).timestamp() * 1000)
-    activity_id = f"{date_id}|activity|{activity_id}"
-    # Build empty activity document
-    doc = {
-        "plan": plan_id,
-        "id": activity_id,
-        "type": "activity",
-        "activityText": "",
-        "createdBy": created_by,
-        "createdAt": current_time,
-        "lastUpdatedBy": created_by,
-        "lastUpdatedAt": current_time,
-    }
-    logging.info(f"Attempting to save document to CosmosDB: {doc}")
-    outputDoc.set(json.dumps(doc))
-    return doc
 
 
 @app.route(
@@ -643,8 +639,16 @@ def add_activity(
         outputDoc.set(json.dumps(doc))
 
         # Send SignalR message to clients
-        sync_args = [ {"id": activity_id, "dateId": date_id, "byUser":created_by} ]
-        signalR.set(json.dumps({"target": "activityAdded", "groupName": plan_id, "arguments": sync_args}))
+        sync_args = [{"id": activity_id, "dateId": date_id, "byUser": created_by}]
+        signalR.set(
+            json.dumps(
+                {
+                    "target": "activityAdded",
+                    "groupName": plan_id,
+                    "arguments": sync_args,
+                }
+            )
+        )
 
         return func.HttpResponse(
             json.dumps({"status": "success", "activity": dict(doc)}),
