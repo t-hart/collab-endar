@@ -625,11 +625,11 @@ def add_activity(
         activity_id = required_fields["id"]
 
         current_time = int(datetime.now(timezone.utc).timestamp() * 1000)
-        activity_id = f"{date_id}|activity|{activity_id}"
+        activity_id_db = f"date|{date_id}|activity|{activity_id}"
         # Build empty activity document
         doc = {
             "plan": plan_id,
-            "id": activity_id,
+            "id": activity_id_db,
             "type": "activity",
             "activityText": "",
             "createdBy": created_by,
@@ -641,7 +641,10 @@ def add_activity(
         outputDoc.set(json.dumps(doc))
 
         # Send SignalR message to clients
-        signalR.set(json.dumps({"target": "activityAdded", "arguments": [doc]}))
+        sync_arg = [
+            {"id": activity_id, "dateId": date_id}
+        ]
+        signalR.set(json.dumps({"target": "activityAdded", "arguments": sync_arg}))
 
         return func.HttpResponse(
             json.dumps({"status": "success", "activity": dict(doc)}),
