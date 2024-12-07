@@ -2,47 +2,91 @@
 import React, { ChangeEvent, useState, useEffect } from 'react';
 import { Card, CardContent, TextField } from '@mui/material';
 import AddDelButtons from './AddDelButtons';
-import { AddProps } from '../helpers/interface';
 import { HubConnection } from '@microsoft/signalr';
+import { AddProps, ActivityMsg, ErrorResponse } from '../helpers/interface';
 
 export interface ActivityCardProps {
+  userName: string;
   id: number;
+  planDateStr: string;
+  planId: string;
   content?: string;
   delActvCardHandler: (id: number) => void;
   addActvCardHandler: (props: AddProps) => void;
   connection: HubConnection;
 }
 
-export const ActivityCard = ({ id, content, delActvCardHandler, addActvCardHandler, connection }: ActivityCardProps) => {
-  const [activityTxt, setActivityTxt] = useState<string>(content ? content : "");
+export const ActivityCard = ({ userName, id, planDateStr, planId, content, delActvCardHandler, addActvCardHandler, connection }: ActivityCardProps) => {
+  const [activityText, setActivityText] = useState<string>(content ? content : "");
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
-  const [isActive, setIsActive] = useState(false);
+  // const [isActive, setIsActive] = useState(false);
+  const [completedEdit, setCompletedEdit] = useState(false);
+
 
   const handleContentChange = (e: ChangeEvent<{ name?: string; value: string }>) => {
-    setActivityTxt(e.target.value);
+    setActivityText(e.target.value);
   };
 
-  console.log(`id of the card: ${id}`)
+  useEffect(() => {
+    if (!completedEdit) return;
+
+    (async () => {
+      try {
+        const response = await fetch(`/api/updateActivity/${planId}/${planDateStr}/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify({ activityText: activityText, updatedBy: userName }),
+        });
+        if (!response.ok) {
+          const data = await response.json()
+          alert(`Error received from updateActivity API: ${(data as ErrorResponse).error}`)
+        }
+      } catch (err) {
+        alert(`Failed calling updateActivity API`)
+      }
+    })();
+
+  }, [completedEdit])
 
   // signalR listeners
-  // TODO: add real handler for each event to lock activity and update activityTxt
+  // TODO: add real handler for each event to lock activity and update activityText
   useEffect(() => {
-    connection.on("lockActivity", (id) => {
-      console.log("[SignalR] lockActivity: ", id);
-    });
+    const updateActivityHandler = (msg: unknown) => {
+      const activityMsg = msg as ActivityMsg
+      if (!(activityMsg.byUser != userName && activityMsg.dateId == planDateStr && activityMsg.id == id)) return;
 
-    connection.on("activityUpdated", (update) => {
-      console.log("[SignalR] activityUpdated: ", update);
-    });
-  })
+      console.log("[SignalR] activityUpdated: ", msg);
+      if (activityMsg.activityText == undefined) {
+        alert("Received undefined activityText from activityUpdated SignalR event")
+        return
+      }
+      setActivityText(activityMsg.activityText);
+    }
+
+    const lockActivityHandler = (msg: unknown) => {
+      console.log("[SignalR] lockActivity: ", id);
+    }
+
+    // Register event handlers
+    connection.on("activityUpdated", updateActivityHandler);
+    connection.on("lockActivity", lockActivityHandler);
+    console.log(`Registered event handlers in activity ${id}`)
+
+    // Cleanup when unmounted
+    return () => {
+      connection.off("activityUpdated", updateActivityHandler);
+      connection.off("lockActivity", lockActivityHandler);
+      console.log(`Cleaned up event handlers in activity ${id}`)
+    };
+
+  }, [])
 
   // component render
   // TODO: add logics and style to lock this component when needed
+  // ${isActive ? 'ring-2 ring-blue-200 bg-blue-50' : ''}
   return (
     <Card
       className={`
         transition-all duration-200
-        ${isActive ? 'ring-2 ring-blue-200 bg-blue-50' : ''}
       `}
       onMouseEnter={() => setHoveredCard(id)}
       onMouseLeave={() => setHoveredCard(null)}
@@ -70,11 +114,19 @@ export const ActivityCard = ({ id, content, delActvCardHandler, addActvCardHandl
         <TextField
           fullWidth
           variant="standard"
-          value={activityTxt}
+          value={activityText}
           placeholder="Enter Activity"
           onChange={handleContentChange}
-          onFocus={() => setIsActive(true)}
-          onBlur={() => setIsActive(false)}
+          onFocus={() => {
+            console.log("onFocus text input: ", id);
+            setCompletedEdit(false)
+            // setIsActive(true)
+          }}
+          onBlur={() => {
+            console.log("onBlur text input: ", id);
+            setCompletedEdit(true)
+            // setIsActive(false)
+          }}
           sx={{
             '& .MuiInput-root': {
               fontSize: '0.9375rem',
