@@ -150,7 +150,7 @@ def create_plan(
 
         # Initialize plan document
         uuid = required_fields["uuid"]
-        plan_id = f"plan_{uuid}"
+        plan_id = f"{uuid}"
         plan_name = plan_data["planName"]
         created_by = plan_data["createdBy"]
         current_time = int(datetime.now(timezone.utc).timestamp() * 1000)
