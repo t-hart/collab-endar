@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ActivityCard from './ActivityCard';
 import { ACTV_CARD_SPREAD } from './constants';
-import { AddType, AddProps, PlanDate, PlanActivity, getDateString, ErrorResponse } from '../helpers/interface';
+import { AddType, AddProps, PlanDate, PlanActivity, getDateString, ErrorResponse, ActivityMsg } from '../helpers/interface';
 import { Card, CardContent } from '@mui/material';
 import AddDelButtons from './AddDelButtons';
 import { HubConnection } from '@microsoft/signalr';
@@ -29,13 +29,16 @@ export const DateCard = ({ userName, planId, planDate, delDateCardHandler, addDa
 
     const dateStr = getDateString(planDate.id)
 
+    console.log("Re-rendering date card: ", dateStr)
+
     const deleteActivityHandler = (id: number) => {
         setActivities(current => {
+            console.log("Deleting activity: via deleteActivityHandler");
             if (current.length === 1) {
                 alert("A date needs at least one activity")
                 return current
             }
-            const idx = current.findIndex(card => card.id === id)
+            const idx = current.findIndex(card => card.id == id)
             return [...current.slice(0, idx),
             ...current.slice(idx + 1)]
         })
@@ -45,6 +48,7 @@ export const DateCard = ({ userName, planId, planDate, delDateCardHandler, addDa
 
     const addActivityHandler = (props: AddProps) => {
         setActivities(current => {
+            console.log("Adding new activity: via addActivityHandler");
             const idx = current.findIndex(card => card.id === props.id)
             let newId: number
             if (props.addType === AddType.AFTER) {
@@ -73,9 +77,8 @@ export const DateCard = ({ userName, planId, planDate, delDateCardHandler, addDa
                 ...current.slice(idx)]
             }
         });
-
-
     };
+
 
     // send activity DELETE event
     useEffect(() => {
@@ -83,7 +86,7 @@ export const DateCard = ({ userName, planId, planDate, delDateCardHandler, addDa
 
         (async () => {
             try {
-                const response = await fetch(`/api/deleteActivity/${planId}/${dateStr}/${deletedActivity}`, {
+                const response = await fetch(`/api/deleteActivity/${planId}/${dateStr}/${deletedActivity}/${userName}`, {
                     method: "DELETE",
                 });
                 if (!response.ok) {
@@ -124,14 +127,58 @@ export const DateCard = ({ userName, planId, planDate, delDateCardHandler, addDa
     // TODO: add real handler for each event
     // TODO: call setActivities for activity added and deleted events
     useEffect(() => {
-        connection.on("activityAdded", (activity) => {
-            console.log("[SignalR] activityAdded: ", activity);
-        });
 
-        connection.on("activityDeleted", (id) => {
-            console.log("[SignalR] activityDeleted: ", id);
-        });
-    })
+        const deleteActivitySyncHandler = (msg: unknown) => {
+            const activityMsg = msg as ActivityMsg
+            if (!(activityMsg.byUser != userName && activityMsg.dateId === dateStr)) return;
+
+            console.log("[SignalR] activityDeleted: ", msg);
+
+            setActivities(current => {
+                console.log("Deleting activity: via deleteActivitySyncHandler");
+                if (current.length === 1) {
+                    alert("A date needs at least one activity")
+                    return current
+                }
+                const idx = current.findIndex(card => card.id == activityMsg.id)
+                return [...current.slice(0, idx),
+                ...current.slice(idx + 1)]
+            })
+                ;
+        };
+
+        const addActivitySyncHandler = (msg: unknown) => {
+            const activityMsg = msg as ActivityMsg
+            if (!(activityMsg.byUser != userName && activityMsg.dateId === dateStr)) return;
+
+            console.log("[SignalR] activityAdded: ", msg);
+
+            setActivities(current => {
+                console.log("Adding new activity: via addActivitySyncHandler");
+                let foundIdx = current.length;
+                for (let i = 0; i < current.length; i++) {
+                    if (current[i].id > activityMsg.id) {
+                        foundIdx = i;
+                        break;
+                    }
+                }
+                const copy = [...current]
+                const newCard: PlanActivity = { id: activityMsg.id, createdBy: userName };
+                copy.splice(foundIdx, 0, newCard);
+                return copy;
+            })
+        }
+
+        // Register handlers
+        connection.on("activityAdded", addActivitySyncHandler);
+        connection.on("activityDeleted", deleteActivitySyncHandler);
+
+        // Cleanup when unmounted
+        return () => {
+            connection.off("activityAdded", addActivitySyncHandler);
+            connection.off("activityDeleted", deleteActivitySyncHandler);
+        };
+    }, [])
 
     // component render
     return (

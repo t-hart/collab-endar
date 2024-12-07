@@ -643,7 +643,7 @@ def add_activity(
         outputDoc.set(json.dumps(doc))
 
         # Send SignalR message to clients
-        sync_args = [ {"id": activity_id, "dateId": date_id} ]
+        sync_args = [ {"id": activity_id, "dateId": date_id, "byUser":created_by} ]
         signalR.set(json.dumps({"target": "activityAdded", "groupName": plan_id, "arguments": sync_args}))
 
         return func.HttpResponse(
@@ -658,7 +658,7 @@ def add_activity(
 
 
 @app.route(
-    route="deleteActivity/{plan_id}/{date_id}/{activity_id}",
+    route="deleteActivity/{plan_id}/{date_id}/{activity_id}/{user_name}",
     methods=["DELETE"],
     auth_level=func.AuthLevel.ANONYMOUS,
 )
@@ -700,6 +700,7 @@ def delete_activity(
         plan_id = req.route_params.get("plan_id")
         date_id = req.route_params.get("date_id")
         activity_id = req.route_params.get("activity_id")
+        user_name = req.route_params.get("user_name")
 
         if not inputDoc:
             return func.HttpResponse(
@@ -720,7 +721,7 @@ def delete_activity(
         logging.info(f"Document marked for deletion: {activity_id}")
 
         # Send SignalR message to clients
-        sync_args = [{"id": activity_id, "dateId": date_id}]
+        sync_args = [{"id": activity_id, "dateId": date_id, "byUser": user_name}]
         signalR.set(
             json.dumps(
                 {

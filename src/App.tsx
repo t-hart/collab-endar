@@ -9,9 +9,10 @@ import { addDays, subDays, differenceInDays } from 'date-fns';
 export interface AppProps {
   date: Date
 }
+const userName = "Team5-user-" + Math.floor(Math.random() * 1000)
 
 function App() {
-  const userName = "Hieu Tran"
+  console.log("User name: ", userName)
   const plan = createBasePlan("some_plan_name", userName, "2025-01-05", "2025-01-09");
   const planId = plan.planMetadata.planId
 
@@ -63,14 +64,39 @@ function App() {
     })
   };
 
+  const deleteDateSyncHandler = (id: Date) => {
+    setDates(current => {
+      if (current.length === 1) {
+        alert("A plan needs at least one date")
+        return current
+      }
+      const idx = current.findIndex(date => date.id === id)
+      return [...current.slice(0, idx),
+      ...current.slice(idx + 1)]
+    });
+  }
+
+  const addDateSyncHandler = (id: Date) => {
+    setDates(current => {
+      let foundIdx = current.length;
+      for (let i = 0; i < current.length; i++) {
+        if (current[i].id > id) {
+          foundIdx = i;
+          break;
+        }
+      }
+      const copy = [...current]
+      const newCard = createPlanDate(id, userName)
+      copy.splice(foundIdx, 0, newCard);
+      return copy;
+    })
+  }
+
 
   useEffect(() => {
 
     const startSignalRConnection = async () => {
       try {
-        // placeholder for now
-        const planId = "plan_ee583bd1";
-
         // First, negotiate with the Azure Function
         const response = await fetch(`/api/negotiate`);
         if (!response.ok) {
@@ -118,6 +144,7 @@ function App() {
   // TODO: add real handler for each event
   useEffect(() => {
     if (!connection) return;
+
     // Add event listeners
     connection.on("planCreated", (plan) => {
       console.log("[SignalR] planCreated: ", plan);
@@ -142,7 +169,7 @@ function App() {
 
     (async () => {
       try {
-        const response = await fetch(`/api/deleteDate/${planId}/date|${getDateString(deletedDate)}`, {
+        const response = await fetch(`/api/deleteDate/${planId}/${getDateString(deletedDate)}`, {
           method: "DELETE",
         });
         if (!response.ok) {
