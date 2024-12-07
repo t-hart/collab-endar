@@ -445,9 +445,10 @@ def add_date(
         )
 
         # Send SignalR message to clients
+        sync_args = [{"id": date_data.get("id")}]
         signalR.set(
             json.dumps(
-                {"target": "dateAdded", "arguments": [docs], "groupName": plan_id}
+                {"target": "dateAdded", "arguments": sync_args, "groupName": plan_id}
             )
         )
 
@@ -473,7 +474,7 @@ def add_date(
     connection_string_setting=COSMOS_CONN_STRING,
     database_name=COSMOS_DB_NAME,
     container_name=COSMOS_CONTAINER_NAME,
-    id="{date_id}",
+    id="date|{date_id}",
     partitionKey="{plan_id}",
 )
 @app.generic_output_binding(
@@ -504,8 +505,8 @@ def delete_date(
         # Get route parameters
         plan_id = req.route_params.get("plan_id")
         date_id = req.route_params.get("date_id")
-        print(plan_id)
-        print(date_id)
+        logging.info(plan_id)
+        logging.info(date_id)
 
         if not inputDoc:
             return func.HttpResponse(
@@ -524,11 +525,12 @@ def delete_date(
         logging.info(f"Document marked for deletion: {date_id}")
 
         # Send SignalR message to clients
+        sync_args = [{"id": date_id}]
         signalR.set(
             json.dumps(
                 {
                     "target": "dateDeleted",
-                    "arguments": [{"id": date_id}],
+                    "arguments": sync_args,
                     "groupName": plan_id,
                 }
             )
@@ -641,10 +643,8 @@ def add_activity(
         outputDoc.set(json.dumps(doc))
 
         # Send SignalR message to clients
-        sync_arg = [
-            {"id": activity_id, "dateId": date_id}
-        ]
-        signalR.set(json.dumps({"target": "activityAdded", "arguments": sync_arg}))
+        sync_args = [ {"id": activity_id, "dateId": date_id} ]
+        signalR.set(json.dumps({"target": "activityAdded", "groupName": plan_id, "arguments": sync_args}))
 
         return func.HttpResponse(
             json.dumps({"status": "success", "activity": dict(doc)}),
@@ -668,7 +668,7 @@ def add_activity(
     connection_string_setting=COSMOS_CONN_STRING,
     database_name=COSMOS_DB_NAME,
     container_name=COSMOS_CONTAINER_NAME,
-    id="{activity_id}",
+    id="date|{date_id}|activity|{activity_id}",
     partitionKey="{plan_id}",
 )
 @app.generic_output_binding(
@@ -720,11 +720,12 @@ def delete_activity(
         logging.info(f"Document marked for deletion: {activity_id}")
 
         # Send SignalR message to clients
+        sync_args = [{"id": activity_id, "dateId": date_id}]
         signalR.set(
             json.dumps(
                 {
                     "target": "activityDeleted",
-                    "arguments": [{"id": activity_id}],
+                    "arguments": sync_args,
                     "groupName": plan_id,
                 }
             )
