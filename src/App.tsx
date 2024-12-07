@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { HubConnectionBuilder, HubConnection } from '@microsoft/signalr';
 import { DateCard } from "./components/DateCard"
 import { Stack } from '@mui/material';
-import { AddType, AddProps, createBasePlan, PlanDate, createPlanDate, getDateString, ErrorResponse, stringifyPlanDate } from './helpers/interface';
+import { AddType, AddProps, createBasePlan, PlanDate, createPlanDate, getDateString, ErrorResponse, stringifyPlanDate, DateMsg } from './helpers/interface';
 import { addDays, subDays, differenceInDays } from 'date-fns';
 
 
@@ -64,33 +64,6 @@ function App() {
     })
   };
 
-  const deleteDateSyncHandler = (id: Date) => {
-    setDates(current => {
-      if (current.length === 1) {
-        alert("A plan needs at least one date")
-        return current
-      }
-      const idx = current.findIndex(date => date.id === id)
-      return [...current.slice(0, idx),
-      ...current.slice(idx + 1)]
-    });
-  }
-
-  const addDateSyncHandler = (id: Date) => {
-    setDates(current => {
-      let foundIdx = current.length;
-      for (let i = 0; i < current.length; i++) {
-        if (current[i].id > id) {
-          foundIdx = i;
-          break;
-        }
-      }
-      const copy = [...current]
-      const newCard = createPlanDate(id, userName)
-      copy.splice(foundIdx, 0, newCard);
-      return copy;
-    })
-  }
 
 
   useEffect(() => {
@@ -145,6 +118,45 @@ function App() {
   useEffect(() => {
     if (!connection) return;
 
+    const deleteDateSyncHandler = (msg: unknown) => {
+      const dateMsg = msg as DateMsg
+      if (dateMsg.byUser == userName) return;
+
+      console.log("[SignalR] dateDeleted: ", msg);
+
+      setDates(current => {
+        if (current.length === 1) {
+          alert("A plan needs at least one date")
+          return current
+        }
+        const idx = current.findIndex(date => getDateString(date.id) == dateMsg.id)
+        return [...current.slice(0, idx),
+        ...current.slice(idx + 1)]
+      });
+    }
+
+    const addDateSyncHandler = (msg: unknown) => {
+      const dateMsg = msg as DateMsg
+      if (dateMsg.byUser == userName) return;
+
+      console.log("[SignalR] dateAdded: ", msg);
+
+      setDates(current => {
+        const addedDate = new Date(dateMsg.id)
+        let foundIdx = current.length;
+        for (let i = 0; i < current.length; i++) {
+          if (current[i].id > addedDate) {
+            foundIdx = i;
+            break;
+          }
+        }
+        const copy = [...current]
+        const newCard = createPlanDate(addedDate, userName)
+        copy.splice(foundIdx, 0, newCard);
+        return copy;
+      })
+    }
+
     // Add event listeners
     connection.on("planCreated", (plan) => {
       console.log("[SignalR] planCreated: ", plan);
@@ -154,14 +166,17 @@ function App() {
       console.log("[SignalR] planDeleted: ", id);
     });
 
-    // TODO: call setDates for date added and deleted events
-    connection.on("dateAdded", (date) => {
-      console.log("[SignalR] dateAdded: ", date);
-    });
-    connection.on("dateDeleted", (id) => {
-      console.log("[SignalR] dateDeleted: ", id);
-    });
-  })
+    // Register handlers
+    connection.on("dateAdded", addDateSyncHandler);
+    connection.on("dateDeleted", deleteDateSyncHandler);
+
+    // Clean up handlers when unmounted
+    return () => {
+      connection.off("dateAdded", addDateSyncHandler);
+      connection.off("dateDeleted", deleteDateSyncHandler);
+    }
+  }
+    , [connection])
 
   // send Date DELETE event
   useEffect(() => {
@@ -169,7 +184,7 @@ function App() {
 
     (async () => {
       try {
-        const response = await fetch(`/api/deleteDate/${planId}/${getDateString(deletedDate)}`, {
+        const response = await fetch(`/api/deleteDate/${planId}/${getDateString(deletedDate)}/${userName}`, {
           method: "DELETE",
         });
         if (!response.ok) {

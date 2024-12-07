@@ -445,10 +445,10 @@ def add_date(
         )
 
         # Send SignalR message to clients
-        sync_args = [{"id": date_data.get("id")}]
+        sync_args = [{"id": date_data.get("id"), "byUser": created_by}]
         signalR.set(
             json.dumps(
-                {"target": "dateAdded", "arguments": sync_args, "groupName": plan_id}
+                {"target": "dateAdded", "groupName": plan_id, "arguments": sync_args}
             )
         )
 
@@ -464,7 +464,7 @@ def add_date(
 
 
 @app.route(
-    route="deleteDate/{plan_id}/{date_id}",
+    route="deleteDate/{plan_id}/{date_id}/{user_name}",
     methods=["DELETE"],
     auth_level=func.AuthLevel.ANONYMOUS,
 )
@@ -505,6 +505,7 @@ def delete_date(
         # Get route parameters
         plan_id = req.route_params.get("plan_id")
         date_id = req.route_params.get("date_id")
+        user_name = req.route_params.get("user_name")
         logging.info(plan_id)
         logging.info(date_id)
 
@@ -525,7 +526,7 @@ def delete_date(
         logging.info(f"Document marked for deletion: {date_id}")
 
         # Send SignalR message to clients
-        sync_args = [{"id": date_id}]
+        sync_args = [{"id": date_id, "byUser": user_name} ]
         signalR.set(
             json.dumps(
                 {

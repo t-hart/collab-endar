@@ -124,8 +124,6 @@ export const DateCard = ({ userName, planId, planDate, delDateCardHandler, addDa
     );
 
     // signalR listeners
-    // TODO: add real handler for each event
-    // TODO: call setActivities for activity added and deleted events
     useEffect(() => {
 
         const deleteActivitySyncHandler = (msg: unknown) => {
