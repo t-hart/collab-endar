@@ -78,9 +78,9 @@ export interface ErrorResponse {
 }
 
 export function stringifyPlanDate(date: PlanDate): string {
-  const formattedData = {
-    ...date,
-    id: getDateString(date.id)
+  const formattedDate = {
+    id: getDateString(date.id),
+    createdBy: date.createdBy,
   };
-  return JSON.stringify(formattedData);
+  return JSON.stringify(formattedDate);
 }
