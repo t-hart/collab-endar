@@ -759,7 +759,7 @@ def delete_activity(
     connection_string_setting=COSMOS_CONN_STRING,
     database_name=COSMOS_DB_NAME,
     container_name=COSMOS_CONTAINER_NAME,
-    id="{activity_id}",
+    id="date|{date_id}|activity|{activity_id}",
     partitionKey="{plan_id}",
 )
 @app.generic_output_binding(
@@ -781,6 +781,26 @@ def lock_activity(
         plan_id = req.route_params.get("plan_id")
         date_id = req.route_params.get("date_id")
         activity_id = req.route_params.get("activity_id")
+        
+        activity_data = req.get_json()
+        logging.info(f"activity_data: {activity_data}")
+
+        # Validate required JSON fields
+        required_fields = {
+            "lockedBy": activity_data.get("lockedBy"),
+        }
+        missing_fields = [x for x, y in required_fields.items() if y is None]
+        if missing_fields:
+            return func.HttpResponse(
+                json.dumps(
+                    {
+                        "error": "Missing required fields from JSON",
+                        "missing": missing_fields,
+                    }
+                ),
+                status_code=400,
+                mimetype="application/json",
+            )
 
         if not inputDoc:
             return func.HttpResponse(
@@ -796,11 +816,12 @@ def lock_activity(
         logging.info(f"Document marked for deletion: {activity_id}")
 
         # Send SignalR message to clients
+        sync_args = [{"id": activity_id, "dateId": date_id, "byUser": required_fields["lockedBy"]}]
         signalR.set(
             json.dumps(
                 {
                     "target": "lockActivity",
-                    "arguments": [{"id": activity_id}],
+                    "arguments": sync_args,
                     "groupName": plan_id,
                 }
             )
