@@ -21,7 +21,7 @@ export const ActivityCard = ({ userName, id, planDateStr, planId, content, delAc
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
   // const [isActive, setIsActive] = useState(false);
   const [isMeEditing, setIsMeEditing] = useState<boolean | null>(null);
-  const [isOtherEditing, setIsOtherEditing] = useState<boolean | null>(null);
+  const [otherIsTyping, setOtherIsTyping] = useState("");
 
 
   const handleContentChange = (e: ChangeEvent<{ name?: string; value: string }>) => {
@@ -80,14 +80,14 @@ export const ActivityCard = ({ userName, id, planDateStr, planId, content, delAc
         return
       }
       setActivityText(activityMsg.activityText);
-      setIsOtherEditing(false);
+      setOtherIsTyping("");
     }
 
     const lockActivityHandler = (msg: unknown) => {
       const activityMsg = msg as ActivityMsg
       if (!(activityMsg.byUser != userName && activityMsg.dateId == planDateStr && activityMsg.id == id)) return;
       console.log("[SignalR] lockActivity: ", msg);
-      setIsOtherEditing(true);
+      setOtherIsTyping(activityMsg.byUser);
 
     }
 
@@ -110,12 +110,11 @@ export const ActivityCard = ({ userName, id, planDateStr, planId, content, delAc
   // ${isActive ? 'ring-2 ring-blue-200 bg-blue-50' : ''}
   return (
     <Card
-      className={`
-        transition-all duration-200
-      `}
+      className={`transition-all duration-200`}
       onMouseEnter={() => setHoveredCard(id)}
       onMouseLeave={() => setHoveredCard(null)}
       sx={{
+        position: 'relative',  // Add this
         border: '1px solid rgba(0, 0, 0, 0.08)',
         borderRadius: '4px',
         boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
@@ -125,6 +124,20 @@ export const ActivityCard = ({ userName, id, planDateStr, planId, content, delAc
         }
       }}
     >
+      <Typography
+        sx={{
+          position: 'absolute',
+          top: '0px',         // This will place it right on the border
+          right: '4px',
+          fontSize: '0.5rem',
+          color: 'blue',
+          zIndex: 1,
+          backgroundColor: 'white',  // This helps it stand out against the border
+          padding: '0 4px'          // Optional: adds some spacing around the text
+        }}
+      >
+        {otherIsTyping ? `${otherIsTyping} is typing ...` : ""}
+      </Typography>
       <CardContent sx={{
         padding: '12px !important',
         '&:last-child': {
@@ -137,7 +150,7 @@ export const ActivityCard = ({ userName, id, planDateStr, planId, content, delAc
           addCardHandler={addActvCardHandler}
         ></AddDelButtons>}
         <TextField
-          disabled={isOtherEditing ? true : false}
+          disabled={otherIsTyping ? true : false}
           fullWidth
           variant="standard"
           value={activityText}
