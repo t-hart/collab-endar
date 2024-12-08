@@ -876,7 +876,7 @@ def update_activity(
             "activityText": activity_data.get("activityText"),
             "updatedBy": activity_data.get("updatedBy"),
         }
-        missing_fields = [x for x, y in required_fields.items() if not y]
+        missing_fields = [x for x, y in required_fields.items() if y is None]
         if missing_fields:
             return func.HttpResponse(
                 json.dumps(
