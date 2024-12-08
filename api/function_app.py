@@ -250,8 +250,8 @@ def get_plan(
         # Assemble response
         response = {
             "plan": dict(planDoc),
-            "dates": [dict(date) for date in datesDocs],
-            "activities": [dict(activity) for activity in activitiesDocs],
+            "dates": sorted([dict(date) for date in datesDocs], key=lambda x: x["id"]),
+            "activities": sorted([dict(activity) for activity in activitiesDocs], key=lambda x: (x["id"].split('|')[1], int(x["id"].split('|')[3]))),
         }
 
         return func.HttpResponse(
