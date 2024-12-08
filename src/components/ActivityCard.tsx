@@ -21,11 +21,17 @@ export const ActivityCard = ({ userName, id, planDateStr, planId, content, delAc
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
   // const [isActive, setIsActive] = useState(false);
   const [isMeEditing, setIsMeEditing] = useState<boolean | null>(null);
+  const [toSyncPendingEdit, setToSyncPendingEdit] = useState<boolean | null>(null);
   const [otherIsTyping, setOtherIsTyping] = useState("");
 
 
   const handleContentChange = (e: ChangeEvent<{ name?: string; value: string }>) => {
     setActivityText(e.target.value);
+    if (e.target.value.slice(-1) == " ") {
+      setToSyncPendingEdit(true)
+    } else {
+      setToSyncPendingEdit(false)
+    }
   };
 
   useEffect(() => {
@@ -55,7 +61,7 @@ export const ActivityCard = ({ userName, id, planDateStr, planId, content, delAc
       try {
         const response = await fetch(`/api/updateActivity/${planId}/${planDateStr}/${id}`, {
           method: "PATCH",
-          body: JSON.stringify({ activityText: activityText, updatedBy: userName }),
+          body: JSON.stringify({ activityText: activityText, updatedBy: userName, isFinal: true }),
         });
         if (!response.ok) {
           const data = await response.json()
@@ -68,6 +74,27 @@ export const ActivityCard = ({ userName, id, planDateStr, planId, content, delAc
 
   }, [isMeEditing])
 
+  // to sync pending changes to others
+  useEffect(() => {
+    if (toSyncPendingEdit == undefined || !toSyncPendingEdit) return;
+
+    (async () => {
+      try {
+        const response = await fetch(`/api/updateActivity/${planId}/${planDateStr}/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify({ activityText: activityText, updatedBy: userName, isFinal: false }),
+        });
+        if (!response.ok) {
+          const data = await response.json()
+          alert(`Error received from updateActivity API for pending changes: ${(data as ErrorResponse).error}`)
+        }
+      } catch (err) {
+        alert(`Failed calling updateActivity API for pending changes`)
+      }
+    })();
+
+  }, [toSyncPendingEdit])
+
 
   // signalR listeners
   useEffect(() => {
@@ -76,12 +103,12 @@ export const ActivityCard = ({ userName, id, planDateStr, planId, content, delAc
       if (!(activityMsg.byUser != userName && activityMsg.dateId == planDateStr && activityMsg.id == id)) return;
 
       console.log("[SignalR] activityUpdated: ", msg);
-      if (activityMsg.activityText == undefined) {
-        alert("Received undefined activityText from activityUpdated SignalR event")
+      if (activityMsg.activityText == undefined || activityMsg.isFinal == undefined) {
+        alert("Received undefined activityText or isFinal from activityUpdated SignalR event")
         return
       }
       setActivityText(activityMsg.activityText);
-      setOtherIsTyping("");
+      if (activityMsg.isFinal) setOtherIsTyping("");
     }
 
     const lockActivityHandler = (msg: unknown) => {
@@ -167,11 +194,9 @@ export const ActivityCard = ({ userName, id, planDateStr, planId, content, delAc
           placeholder="Enter Activity"
           onChange={handleContentChange}
           onFocus={() => {
-            console.log("onFocus text input: ", id);
             setIsMeEditing(true)
           }}
           onBlur={() => {
-            console.log("onBlur text input: ", id);
             setIsMeEditing(false)
           }}
           sx={{

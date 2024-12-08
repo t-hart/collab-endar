@@ -35,7 +35,7 @@ export interface PlanActivity {
 }
 
 export async function getPlan(planId: string): Promise<Plan> {
-  
+
   // Get plan from cosmos db
   const response = await fetch(`/api/getPlan/${planId}`);
   if (!response.ok) {
@@ -48,7 +48,7 @@ export async function getPlan(planId: string): Promise<Plan> {
     // Parse date from date_id string
     id: new Date(date.id.split('|')[1]),
     createdBy: date.createdBy,
-    
+
     // Loop through activities and assign to this date if date_id in activity_id
     activities: activities
       .filter((activity: any) => activity.id.startsWith(`${date.id}`))
@@ -121,6 +121,7 @@ export interface ActivityMsg {
   dateId: string
   byUser: string
   activityText?: string
+  isFinal?: boolean
 }
 
 export interface DateMsg {

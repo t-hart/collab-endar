@@ -896,6 +896,7 @@ def update_activity(
         required_fields = {
             "activityText": activity_data.get("activityText"),
             "updatedBy": activity_data.get("updatedBy"),
+            "isFinal": activity_data.get("isFinal"),
         }
         missing_fields = [x for x, y in required_fields.items() if y is None]
         if missing_fields:
@@ -921,41 +922,42 @@ def update_activity(
                 mimetype="application/json",
             )
 
-        # Determine if activity needs to be moved
-        inputDoc = list(inputDoc)[0]
-        prev_activity_id = inputDoc.get("id")
-        activity_id_db = f"date|{date_id}|activity|{activity_id}"
+        if required_fields["isFinal"]:
+            # Determine if activity needs to be moved
+            inputDoc = list(inputDoc)[0]
+            prev_activity_id = inputDoc.get("id")
+            activity_id_db = f"date|{date_id}|activity|{activity_id}"
 
-        if activity_id_db != prev_activity_id:
-            # Move activity
-            newDoc = dict(inputDoc)
-            newDoc["id"] = activity_id_db
-            newDoc["activityText"] = required_fields["activityText"]
-            newDoc["lastUpdatedBy"] = required_fields["updatedBy"]
-            newDoc["lastUpdatedAt"] = int(datetime.now(timezone.utc).timestamp() * 1000)
-            updateDoc.set(func.Document.from_dict(newDoc))
+            if activity_id_db != prev_activity_id:
+                # Move activity
+                newDoc = dict(inputDoc)
+                newDoc["id"] = activity_id_db
+                newDoc["activityText"] = required_fields["activityText"]
+                newDoc["lastUpdatedBy"] = required_fields["updatedBy"]
+                newDoc["lastUpdatedAt"] = int(datetime.now(timezone.utc).timestamp() * 1000)
+                updateDoc.set(func.Document.from_dict(newDoc))
 
-            # Mark old doc for deletion
-            oldDoc = dict(inputDoc)
-            oldDoc["ttl"] = 1
-            deleteDoc.set(func.Document.from_dict(oldDoc))
+                # Mark old doc for deletion
+                oldDoc = dict(inputDoc)
+                oldDoc["ttl"] = 1
+                deleteDoc.set(func.Document.from_dict(oldDoc))
 
-            logging.info(f"Activity moved: {prev_activity_id} -> {activity_id_db}")
-            responseDoc = newDoc
-        else:
-            # Update existing doc
-            inputDoc["activityText"] = required_fields["activityText"]
-            inputDoc["lastUpdatedBy"] = required_fields["updatedBy"]
-            inputDoc["lastUpdatedAt"] = int(
-                datetime.now(timezone.utc).timestamp() * 1000
-            )
-            updateDoc.set(inputDoc)
+                logging.info(f"Activity moved: {prev_activity_id} -> {activity_id_db}")
+                responseDoc = newDoc
+            else:
+                # Update existing doc
+                inputDoc["activityText"] = required_fields["activityText"]
+                inputDoc["lastUpdatedBy"] = required_fields["updatedBy"]
+                inputDoc["lastUpdatedAt"] = int(
+                    datetime.now(timezone.utc).timestamp() * 1000
+                )
+                updateDoc.set(inputDoc)
 
-            logging.info(f"Activity updated: {activity_id_db}")
-            responseDoc = dict(inputDoc)
+                logging.info(f"Activity updated: {activity_id_db}")
+                responseDoc = dict(inputDoc)
 
         # Send SignalR message to clients
-        sync_args = [{"activityText": required_fields["activityText"],"id": activity_id, "dateId": date_id, "byUser": required_fields["updatedBy"]}]
+        sync_args = [{"activityText": required_fields["activityText"],"id": activity_id, "dateId": date_id, "isFinal": required_fields["isFinal"], "byUser": required_fields["updatedBy"]}]
         signalR.set(
             json.dumps(
                 {
@@ -967,7 +969,7 @@ def update_activity(
         )
 
         return func.HttpResponse(
-            json.dumps({"status": "success", "activity": responseDoc}),
+            json.dumps({"status": "success", "activity": sync_args}),
             mimetype="application/json",
         )
     except Exception as e:
