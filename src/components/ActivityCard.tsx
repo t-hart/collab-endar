@@ -29,6 +29,7 @@ export const ActivityCard = ({ userName, id, planDateStr, planId, content, delAc
   };
 
   useEffect(() => {
+    if (isMeEditing == undefined) return;
 
     // to lock the activity from others when editing
     if (isMeEditing) {
