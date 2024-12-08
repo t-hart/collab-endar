@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { HubConnectionBuilder, HubConnection } from '@microsoft/signalr';
 import { DateCard } from "./components/DateCard"
-import { Stack } from '@mui/material';
+import { Button, Divider, Stack, TextField } from '@mui/material';
 import { LoginPage } from "./components/LoginPage"
 import { AddType, AddProps, Plan, createBasePlan, PlanDate, getPlan, createPlanDate, getDateString, ErrorResponse, stringifyPlanDate, DateMsg } from './helpers/interface';
 import { addDays, subDays, differenceInDays } from 'date-fns';
@@ -125,6 +125,7 @@ function App() {
           setDates(fetchedPlan.dates);
           setPlan(fetchedPlan);
           setDates(fetchedPlan.dates);
+          setPlanName(fetchedPlan.planMetadata.planName);
         }
       } catch (error) {
         console.error("Failed to fetch plan:", error);
@@ -318,20 +319,37 @@ function App() {
   }
 
   return (
-    <Stack direction="row" spacing={2}>
-      {planId &&
-        dates.map((card) => (
-          <DateCard
-            key={card.id.toString()}
-            userName={userName}
-            planId={planId}
-            planDate={card}
-            connection={connection}
-            delDateCardHandler={deleteDateHandler}
-            addDateCardHandler={addDateHandler}
-          />
-        ))}
-    </Stack>
+    <div>
+      <h1>{planName}</h1>
+      <div style={{ display: 'flex', alignItems: 'center' }}>
+        <Button variant="contained" onClick={() => navigator.clipboard.writeText(planId || '')}>
+          Copy invite code
+        </Button>
+        <TextField
+          variant="outlined"
+          value={planId || ''}
+          InputProps={{
+        readOnly: true,
+          }}
+          style={{ marginLeft: '10px', flex: 1 }}
+        />
+      </div>
+      <Divider style={{ margin: '20px 0' }} />
+      <Stack direction="row" spacing={2}>
+        {planId &&
+          dates.map((card) => (
+            <DateCard
+              key={card.id.toString()}
+              userName={userName}
+              planId={planId}
+              planDate={card}
+              connection={connection}
+              delDateCardHandler={deleteDateHandler}
+              addDateCardHandler={addDateHandler}
+            />
+          ))}
+      </Stack>
+    </div>
   );
 }
 
