@@ -115,11 +115,14 @@ export const ActivityCard = ({ userName, id, planDateStr, planId, content, delAc
       onMouseEnter={() => setHoveredCard(id)}
       onMouseLeave={() => setHoveredCard(null)}
       sx={{
-        position: 'relative',  // Add this
+        position: 'relative',
         border: '1px solid rgba(0, 0, 0, 0.08)',
-        borderRadius: '4px',
+        borderRadius: '8px',
         boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
         marginBottom: '8px',
+        backgroundColor: isMeEditing ? '#f0f8ff' : undefined,  // Light blue background
+        minHeight: '100px',         // Set minimum height
+        height: 'auto',             // Allow height to grow
         '&:last-child': {
           marginBottom: 0
         }
@@ -128,23 +131,28 @@ export const ActivityCard = ({ userName, id, planDateStr, planId, content, delAc
       <Typography
         sx={{
           position: 'absolute',
-          top: '0px',         // This will place it right on the border
+          top: '0px',
           right: '4px',
           fontSize: '0.5rem',
           color: 'blue',
           zIndex: 1,
-          backgroundColor: 'white',  // This helps it stand out against the border
-          padding: '0 4px'          // Optional: adds some spacing around the text
+          backgroundColor: 'white',
+          padding: '0 4px'
         }}
       >
         {otherIsTyping ? `${otherIsTyping} is typing ...` : ""}
       </Typography>
-      <CardContent sx={{
-        padding: '12px !important',
-        '&:last-child': {
-          paddingBottom: '12px !important'
-        }
-      }}>
+      <CardContent
+        sx={{
+          padding: '12px !important',
+          height: '100%',           // Take full height of parent
+          display: 'flex',          // Use flexbox
+          flexDirection: 'column',  // Stack children vertically
+          '&:last-child': {
+            paddingBottom: '12px !important'
+          }
+        }}
+      >
         {hoveredCard === id && <AddDelButtons
           id={id}
           deleteCardHandler={delActvCardHandler}
@@ -153,6 +161,7 @@ export const ActivityCard = ({ userName, id, planDateStr, planId, content, delAc
         <TextField
           disabled={otherIsTyping ? true : false}
           fullWidth
+          multiline              // Allow multiple lines
           variant="standard"
           value={activityText}
           placeholder="Enter Activity"
@@ -166,9 +175,11 @@ export const ActivityCard = ({ userName, id, planDateStr, planId, content, delAc
             setIsMeEditing(false)
           }}
           sx={{
+            flex: 1,              // Take remaining space
             '& .MuiInput-root': {
               fontSize: '0.9375rem',
               color: 'rgba(0, 0, 0, 0.87)',
+              height: '100%',     // Take full height
               '&:before': {
                 borderBottom: 'none'
               },
@@ -180,7 +191,9 @@ export const ActivityCard = ({ userName, id, planDateStr, planId, content, delAc
               }
             },
             '& .MuiInput-input': {
-              padding: '0px'
+              padding: '0px',
+              height: '100%',     // Take full height
+              overflow: 'auto'    // Add scrolling if needed
             }
           }}
         />

@@ -86,7 +86,8 @@ function App() {
     const createPlan = async () => {
       try {
         const dates = eachDayOfInterval({ start: new Date(startDate), end: new Date(endDate) }).map(date => ({
-          id: date.toISOString().split('T')[0]}))
+          id: date.toISOString().split('T')[0]
+        }))
         const newPlan = {
           "uuid": uuid(),
           "planName": planName,
@@ -97,7 +98,7 @@ function App() {
           method: "POST",
           body: JSON.stringify(newPlan),
         });
-        
+
         const data = await response.json();
         if (!response.ok) {
           alert(`Error in createPlan: ${(data as ErrorResponse).error}`);
@@ -131,7 +132,7 @@ function App() {
         console.error("Failed to fetch plan:", error);
       }
     };
-    
+
     fetchPlan();
   }, [planId]);
 
@@ -297,7 +298,7 @@ function App() {
         <h1> {error}</h1>
       </div>
     )
-  } 
+  }
   if (isLoginPage) {
     return (
       <LoginPage onCreatePlan={handleCreatePlan} onJoinPlan={handleJoinPlan} />
@@ -309,7 +310,7 @@ function App() {
         <h1> Loading plan ...</h1>
       </div>
     )
-  } 
+  }
   if (!connection) {
     return (
       <div>
@@ -319,7 +320,12 @@ function App() {
   }
 
   return (
-    <div>
+    <div style={{
+      backgroundColor: undefined,
+      minHeight: '100vh',
+      minWidth: '100%',
+      width: 'fit-content',
+    }}>
       <h1>{planName}</h1>
       <div style={{ display: 'flex', alignItems: 'center' }}>
         <Button variant="contained" onClick={() => navigator.clipboard.writeText(planId || '')}>
@@ -329,13 +335,13 @@ function App() {
           variant="outlined"
           value={planId || ''}
           InputProps={{
-        readOnly: true,
+            readOnly: true,
           }}
           style={{ marginLeft: '10px', flex: 1 }}
         />
       </div>
       <Divider style={{ margin: '20px 0' }} />
-      <Stack direction="row" spacing={2}>
+      <Stack direction="row" spacing={2} alignItems="flex-start">
         {planId &&
           dates.map((card) => (
             <DateCard

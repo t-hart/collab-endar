@@ -185,7 +185,8 @@ export const DateCard = ({ userName, planId, planDate, delDateCardHandler, addDa
             onMouseLeave={() => setHoveredCard(false)}
             sx={{
                 boxShadow: 'none',
-                backgroundColor: '#f5f5f5'
+                backgroundColor: '#f5f5f5',
+                minWidth: '350px'
             }}>
             <CardContent sx={{
                 padding: '16px',
