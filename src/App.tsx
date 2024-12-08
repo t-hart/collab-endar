@@ -2,26 +2,29 @@ import React, { useState, useEffect } from 'react';
 import { HubConnectionBuilder, HubConnection } from '@microsoft/signalr';
 import { DateCard } from "./components/DateCard"
 import { Stack } from '@mui/material';
+import { LoginPage } from "./components/LoginPage"
 import { AddType, AddProps, Plan, createBasePlan, PlanDate, getPlan, createPlanDate, getDateString, ErrorResponse, stringifyPlanDate, DateMsg } from './helpers/interface';
 import { addDays, subDays, differenceInDays } from 'date-fns';
-
+import { v4 as uuid } from 'uuid';
+import { eachDayOfInterval } from 'date-fns';
 
 export interface AppProps {
   date: Date
 }
-const userName = "Team5-user-" + Math.floor(Math.random() * 1000)
 
 function App() {
-  console.log("User name: ", userName)
-
-  const planId = "f7873135-5f9d-4394-b823-a599a94a81f6-9999999"
-  //const plan = createBasePlan("some_plan_name", userName, "2025-01-05", "2025-01-09");
+  const [userName, setUserName] = useState("");
+  const [planName, setPlanName] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [planId, setPlanId] = useState<string | null>(null);
   const [plan, setPlan] = useState<Plan | null>(null);
   const [dates, setDates] = useState<PlanDate[]>([]);
   const [addedDate, setAddedDate] = useState<PlanDate | null>();
   const [deletedDate, setDeletedDate] = useState<Date | null>();
   const [connection, setConnection] = useState<HubConnection | null>(null);
   const [error, setError] = useState("");
+  const [isLoginPage, setIsLoginPage] = useState(true);
 
   const deleteDateHandler = (id: Date) => {
     setDates(current => {
@@ -65,16 +68,69 @@ function App() {
     })
   };
 
+  const handleCreatePlan = (userName: string, planName: string, startDate: string, endDate: string) => {
+    setUserName(userName);
+    setPlanName(planName);
+    setStartDate(startDate);
+    setEndDate(endDate);
+    setIsLoginPage(false);
+  };
+
+  const handleJoinPlan = (userName: string, inviteCode: string) => {
+    setUserName(userName);
+    setPlanId(inviteCode);
+    setIsLoginPage(false);
+  };
+
+  useEffect(() => {
+    const createPlan = async () => {
+      try {
+        const dates = eachDayOfInterval({ start: new Date(startDate), end: new Date(endDate) }).map(date => ({
+          id: date.toISOString().split('T')[0]}))
+        const newPlan = {
+          "uuid": uuid(),
+          "planName": planName,
+          "createdBy": userName,
+          "dates": dates
+        }
+        const response = await fetch(`/api/createPlan`, {
+          method: "POST",
+          body: JSON.stringify(newPlan),
+        });
+        
+        const data = await response.json();
+        if (!response.ok) {
+          alert(`Error in createPlan: ${(data as ErrorResponse).error}`);
+          return;
+        }
+        setPlan(data.data.plan);
+        setDates(data.data.dates);
+        setPlanId(data.data.plan.id);
+      } catch (err) {
+        alert(`Failed to create new plan: ${err}`);
+      }
+    };
+
+    if (!planId && !isLoginPage) {
+      createPlan();
+    }
+  }, [planName, userName, startDate, endDate, isLoginPage]);
+
   useEffect(() => {
     const fetchPlan = async () => {
       try {
-        const fetchedPlan = await getPlan(planId);
-        setPlan(fetchedPlan);
-        setDates(fetchedPlan.dates);
+        if (planId) {
+          const fetchedPlan = await getPlan(planId);
+          setPlan(fetchedPlan);
+          setDates(fetchedPlan.dates);
+          setPlan(fetchedPlan);
+          setDates(fetchedPlan.dates);
+        }
       } catch (error) {
         console.error("Failed to fetch plan:", error);
       }
     };
+    
     fetchPlan();
   }, [planId]);
 
@@ -113,7 +169,7 @@ function App() {
       }
     };
 
-    if (!connection) {
+    if (planId && !connection) {
       startSignalRConnection();
     };
 
@@ -123,7 +179,7 @@ function App() {
         connection.stop();
       }
     };
-  }, []);
+  }, [planId]);
 
   // signalR listeners
   // TODO: add real handler for each event
@@ -240,13 +296,20 @@ function App() {
         <h1> {error}</h1>
       </div>
     )
-  } else if (!plan) {
+  } 
+  if (isLoginPage) {
+    return (
+      <LoginPage onCreatePlan={handleCreatePlan} onJoinPlan={handleJoinPlan} />
+    );
+  }
+  if (!plan) {
     return (
       <div>
         <h1> Loading plan ...</h1>
       </div>
     )
-  } else if (!connection) {
+  } 
+  if (!connection) {
     return (
       <div>
         <h1> Connecting to SignalR ...</h1>
@@ -256,19 +319,20 @@ function App() {
 
   return (
     <Stack direction="row" spacing={2}>
-      {dates.map(card => (
-        <DateCard
-          key={card.id.toString()}
-          userName={userName}
-          planId={planId}
-          planDate={card}
-          connection={connection}
-          delDateCardHandler={deleteDateHandler}
-          addDateCardHandler={addDateHandler}
-        />
-      ))}
-    </Stack >
-  )
+      {planId &&
+        dates.map((card) => (
+          <DateCard
+            key={card.id.toString()}
+            userName={userName}
+            planId={planId}
+            planDate={card}
+            connection={connection}
+            delDateCardHandler={deleteDateHandler}
+            addDateCardHandler={addDateHandler}
+          />
+        ))}
+    </Stack>
+  );
 }
 
 export default App;
