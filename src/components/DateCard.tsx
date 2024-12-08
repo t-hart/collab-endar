@@ -29,8 +29,6 @@ export const DateCard = ({ userName, planId, planDate, delDateCardHandler, addDa
 
     const dateStr = getDateString(planDate.id)
 
-    console.log("Re-rendering date card: ", dateStr)
-
     const deleteActivityHandler = (id: number) => {
         setActivities(current => {
             console.log("Deleting activity: via deleteActivityHandler");
