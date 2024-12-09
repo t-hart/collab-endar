@@ -16,21 +16,35 @@ export interface ActivityCardProps {
   connection: HubConnection;
 }
 
-export const ActivityCard = ({ userName, id, planDateStr, planId, content, delActvCardHandler, addActvCardHandler, connection }: ActivityCardProps) => {
-  const [activityText, setActivityText] = useState<string>(content ? content : "");
+export const ActivityCard = ({
+  userName,
+  id,
+  planDateStr,
+  planId,
+  content,
+  delActvCardHandler,
+  addActvCardHandler,
+  connection,
+}: ActivityCardProps) => {
+  const [activityText, setActivityText] = useState<string>(
+    content ? content : ''
+  );
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
   // const [isActive, setIsActive] = useState(false);
   const [isMeEditing, setIsMeEditing] = useState<boolean | null>(null);
-  const [toSyncPendingEdit, setToSyncPendingEdit] = useState<boolean | null>(null);
-  const [otherIsTyping, setOtherIsTyping] = useState("");
+  const [toSyncPendingEdit, setToSyncPendingEdit] = useState<boolean | null>(
+    null
+  );
+  const [otherIsTyping, setOtherIsTyping] = useState('');
 
-
-  const handleContentChange = (e: ChangeEvent<{ name?: string; value: string }>) => {
+  const handleContentChange = (
+    e: ChangeEvent<{ name?: string; value: string }>
+  ) => {
     setActivityText(e.target.value);
-    if (e.target.value.slice(-1) == " ") {
-      setToSyncPendingEdit(true)
+    if (e.target.value.slice(-1) == ' ') {
+      setToSyncPendingEdit(true);
     } else {
-      setToSyncPendingEdit(false)
+      setToSyncPendingEdit(false);
     }
   };
 
@@ -41,38 +55,51 @@ export const ActivityCard = ({ userName, id, planDateStr, planId, content, delAc
     if (isMeEditing) {
       (async () => {
         try {
-          const response = await fetch(`/api/lockActivity/${planId}/${planDateStr}/${id}`, {
-            method: "POST",
-            body: JSON.stringify({ lockedBy: userName }),
-          });
+          const response = await fetch(
+            `/api/lockActivity/${planId}/${planDateStr}/${id}`,
+            {
+              method: 'POST',
+              body: JSON.stringify({ lockedBy: userName }),
+            }
+          );
           if (!response.ok) {
-            const data = await response.json()
-            alert(`Error received from lockActivity API: ${(data as ErrorResponse).error}`)
+            const data = await response.json();
+            alert(
+              `Error received from lockActivity API: ${(data as ErrorResponse).error}`
+            );
           }
         } catch (err) {
-          alert(`Failed calling lockActivity API`)
+          alert(`Failed calling lockActivity API`);
         }
       })();
-      return
+      return;
     }
 
     // to update DB and others after completing edit
     (async () => {
       try {
-        const response = await fetch(`/api/updateActivity/${planId}/${planDateStr}/${id}`, {
-          method: "PATCH",
-          body: JSON.stringify({ activityText: activityText, updatedBy: userName, isFinal: true }),
-        });
+        const response = await fetch(
+          `/api/updateActivity/${planId}/${planDateStr}/${id}`,
+          {
+            method: 'PATCH',
+            body: JSON.stringify({
+              activityText: activityText,
+              updatedBy: userName,
+              isFinal: true,
+            }),
+          }
+        );
         if (!response.ok) {
-          const data = await response.json()
-          alert(`Error received from updateActivity API: ${(data as ErrorResponse).error}`)
+          const data = await response.json();
+          alert(
+            `Error received from updateActivity API: ${(data as ErrorResponse).error}`
+          );
         }
       } catch (err) {
-        alert(`Failed calling updateActivity API`)
+        alert(`Failed calling updateActivity API`);
       }
     })();
-
-  }, [isMeEditing])
+  }, [isMeEditing]);
 
   // to sync pending changes to others
   useEffect(() => {
@@ -80,58 +107,82 @@ export const ActivityCard = ({ userName, id, planDateStr, planId, content, delAc
 
     (async () => {
       try {
-        const response = await fetch(`/api/updateActivity/${planId}/${planDateStr}/${id}`, {
-          method: "PATCH",
-          body: JSON.stringify({ activityText: activityText, updatedBy: userName, isFinal: false }),
-        });
+        const response = await fetch(
+          `/api/updateActivity/${planId}/${planDateStr}/${id}`,
+          {
+            method: 'PATCH',
+            body: JSON.stringify({
+              activityText: activityText,
+              updatedBy: userName,
+              isFinal: false,
+            }),
+          }
+        );
         if (!response.ok) {
-          const data = await response.json()
-          alert(`Error received from updateActivity API for pending changes: ${(data as ErrorResponse).error}`)
+          const data = await response.json();
+          alert(
+            `Error received from updateActivity API for pending changes: ${(data as ErrorResponse).error}`
+          );
         }
       } catch (err) {
-        alert(`Failed calling updateActivity API for pending changes`)
+        alert(`Failed calling updateActivity API for pending changes`);
       }
     })();
-
-  }, [toSyncPendingEdit])
-
+  }, [toSyncPendingEdit]);
 
   // signalR listeners
   useEffect(() => {
     const updateActivityHandler = (msg: unknown) => {
-      const activityMsg = msg as ActivityMsg
-      if (!(activityMsg.byUser != userName && activityMsg.dateId == planDateStr && activityMsg.id == id)) return;
+      const activityMsg = msg as ActivityMsg;
+      if (
+        !(
+          activityMsg.byUser != userName &&
+          activityMsg.dateId == planDateStr &&
+          activityMsg.id == id
+        )
+      )
+        return;
 
-      console.log("[SignalR] activityUpdated: ", msg);
-      if (activityMsg.activityText == undefined || activityMsg.isFinal == undefined) {
-        alert("Received undefined activityText or isFinal from activityUpdated SignalR event")
-        return
+      console.log('[SignalR] activityUpdated: ', msg);
+      if (
+        activityMsg.activityText == undefined ||
+        activityMsg.isFinal == undefined
+      ) {
+        alert(
+          'Received undefined activityText or isFinal from activityUpdated SignalR event'
+        );
+        return;
       }
       setActivityText(activityMsg.activityText);
-      if (activityMsg.isFinal) setOtherIsTyping("");
-    }
+      if (activityMsg.isFinal) setOtherIsTyping('');
+    };
 
     const lockActivityHandler = (msg: unknown) => {
-      const activityMsg = msg as ActivityMsg
-      if (!(activityMsg.byUser != userName && activityMsg.dateId == planDateStr && activityMsg.id == id)) return;
-      console.log("[SignalR] lockActivity: ", msg);
+      const activityMsg = msg as ActivityMsg;
+      if (
+        !(
+          activityMsg.byUser != userName &&
+          activityMsg.dateId == planDateStr &&
+          activityMsg.id == id
+        )
+      )
+        return;
+      console.log('[SignalR] lockActivity: ', msg);
       setOtherIsTyping(activityMsg.byUser);
-
-    }
+    };
 
     // Register event handlers
-    connection.on("activityUpdated", updateActivityHandler);
-    connection.on("lockActivity", lockActivityHandler);
-    console.log(`Registered event handlers in activity ${id}`)
+    connection.on('activityUpdated', updateActivityHandler);
+    connection.on('lockActivity', lockActivityHandler);
+    console.log(`Registered event handlers in activity ${id}`);
 
     // Cleanup when unmounted
     return () => {
-      connection.off("activityUpdated", updateActivityHandler);
-      connection.off("lockActivity", lockActivityHandler);
-      console.log(`Cleaned up event handlers in activity ${id}`)
+      connection.off('activityUpdated', updateActivityHandler);
+      connection.off('lockActivity', lockActivityHandler);
+      console.log(`Cleaned up event handlers in activity ${id}`);
     };
-
-  }, [])
+  }, []);
 
   // component render
   // TODO: add logics and style to lock this component when needed
@@ -147,12 +198,12 @@ export const ActivityCard = ({ userName, id, planDateStr, planId, content, delAc
         borderRadius: '8px',
         boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
         marginBottom: '8px',
-        backgroundColor: isMeEditing ? '#f0f8ff' : undefined,  // Light blue background
-        minHeight: '100px',         // Set minimum height
-        height: 'auto',             // Allow height to grow
+        backgroundColor: isMeEditing ? '#f0f8ff' : undefined, // Light blue background
+        minHeight: '100px', // Set minimum height
+        height: 'auto', // Allow height to grow
         '&:last-child': {
-          marginBottom: 0
-        }
+          marginBottom: 0,
+        },
       }}
     >
       <Typography
@@ -164,62 +215,64 @@ export const ActivityCard = ({ userName, id, planDateStr, planId, content, delAc
           color: 'blue',
           zIndex: 1,
           backgroundColor: 'white',
-          padding: '0 4px'
+          padding: '0 4px',
         }}
       >
-        {otherIsTyping ? `${otherIsTyping} is typing ...` : ""}
+        {otherIsTyping ? `${otherIsTyping} is typing ...` : ''}
       </Typography>
       <CardContent
         sx={{
           padding: '12px !important',
-          height: '100%',           // Take full height of parent
-          display: 'flex',          // Use flexbox
-          flexDirection: 'column',  // Stack children vertically
+          height: '100%', // Take full height of parent
+          display: 'flex', // Use flexbox
+          flexDirection: 'column', // Stack children vertically
           '&:last-child': {
-            paddingBottom: '12px !important'
-          }
+            paddingBottom: '12px !important',
+          },
         }}
       >
-        {hoveredCard === id && <AddDelButtons
-          id={id}
-          deleteCardHandler={delActvCardHandler}
-          addCardHandler={addActvCardHandler}
-        ></AddDelButtons>}
+        {hoveredCard === id && (
+          <AddDelButtons
+            id={id}
+            deleteCardHandler={delActvCardHandler}
+            addCardHandler={addActvCardHandler}
+          ></AddDelButtons>
+        )}
         <TextField
           disabled={otherIsTyping ? true : false}
           fullWidth
-          multiline              // Allow multiple lines
-          variant="standard"
+          multiline // Allow multiple lines
+          variant='standard'
           value={activityText}
-          placeholder="Enter Activity"
+          placeholder='Enter Activity'
           onChange={handleContentChange}
           onFocus={() => {
-            setIsMeEditing(true)
+            setIsMeEditing(true);
           }}
           onBlur={() => {
-            setIsMeEditing(false)
+            setIsMeEditing(false);
           }}
           sx={{
-            flex: 1,              // Take remaining space
+            flex: 1, // Take remaining space
             '& .MuiInput-root': {
               fontSize: '0.9375rem',
               color: 'rgba(0, 0, 0, 0.87)',
-              height: '100%',     // Take full height
+              height: '100%', // Take full height
               '&:before': {
-                borderBottom: 'none'
+                borderBottom: 'none',
               },
               '&:hover:before': {
-                borderBottom: 'none !important'
+                borderBottom: 'none !important',
               },
               '&:after': {
-                borderBottom: 'none'
-              }
+                borderBottom: 'none',
+              },
             },
             '& .MuiInput-input': {
               padding: '0px',
-              height: '100%',     // Take full height
-              overflow: 'auto'    // Add scrolling if needed
-            }
+              height: '100%', // Take full height
+              overflow: 'auto', // Add scrolling if needed
+            },
           }}
         />
       </CardContent>

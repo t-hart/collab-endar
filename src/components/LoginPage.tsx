@@ -1,12 +1,29 @@
 import React, { useState } from 'react';
-import { TextField, Button, Box, Typography, Tabs, Tab, Card, CardContent } from '@mui/material';
+import {
+  TextField,
+  Button,
+  Box,
+  Typography,
+  Tabs,
+  Tab,
+  Card,
+  CardContent,
+} from '@mui/material';
 
 interface LoginPageProps {
-  onCreatePlan: (userName: string, planName: string, startDate: string, endDate: string) => void;
+  onCreatePlan: (
+    userName: string,
+    planName: string,
+    startDate: string,
+    endDate: string
+  ) => void;
   onJoinPlan: (userName: string, inviteCode: string) => void;
 }
 
-export const LoginPage: React.FC<LoginPageProps> = ({ onCreatePlan, onJoinPlan }) => {
+export const LoginPage: React.FC<LoginPageProps> = ({
+  onCreatePlan,
+  onJoinPlan,
+}) => {
   const [userName, setUserName] = useState('');
   const [inviteCode, setInviteCode] = useState('');
   const [planName, setPlanName] = useState('');
@@ -25,7 +42,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onCreatePlan, onJoinPlan }
   };
 
   const handleJoinPlan = () => {
-    console.log("Joining plan with invite code: ", inviteCode);
+    console.log('Joining plan with invite code: ', inviteCode);
     onJoinPlan(userName, inviteCode);
   };
 
@@ -37,11 +54,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onCreatePlan, onJoinPlan }
   return (
     <Box
       sx={{
-      minHeight: '100vh',
-      background: 'rgba(68,165,255,0.2)',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
+        minHeight: '100vh',
+        background: 'rgba(68,165,255,0.2)',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
       }}
     >
       <Card
@@ -55,91 +72,91 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onCreatePlan, onJoinPlan }
         }}
       >
         <CardContent>
-          <Typography 
-            variant="h5" 
-            sx={{ 
-              textAlign: 'center', 
-              color: '#1976d2', 
-              fontWeight: 'bold' 
+          <Typography
+            variant='h5'
+            sx={{
+              textAlign: 'center',
+              color: '#1976d2',
+              fontWeight: 'bold',
             }}
           >
             Travel Planner
           </Typography>
           <Box mt={3}>
             <TextField
-              label="Your Name"
+              label='Your Name'
               value={userName}
               onChange={(e) => setUserName(e.target.value)}
               fullWidth
-              variant="outlined"
+              variant='outlined'
             />
           </Box>
-          <Tabs 
-            value={tab} 
-            onChange={handleTabChange} 
-            indicatorColor="primary" 
-            textColor="primary"
-            variant="fullWidth"
+          <Tabs
+            value={tab}
+            onChange={handleTabChange}
+            indicatorColor='primary'
+            textColor='primary'
+            variant='fullWidth'
             sx={{
               marginTop: '20px',
               backgroundColor: '#ffffff',
               borderRadius: '10px',
             }}
           >
-            <Tab 
-              label="Create a New Plan" 
-              sx={{ 
-                fontWeight: 'bold', 
-                color: '#555555', 
-                '&.Mui-selected': { color: '#1976d2' } 
-              }} 
+            <Tab
+              label='Create a New Plan'
+              sx={{
+                fontWeight: 'bold',
+                color: '#555555',
+                '&.Mui-selected': { color: '#1976d2' },
+              }}
             />
-            <Tab 
-              label="Join with Invite Code" 
-              sx={{ 
-                fontWeight: 'bold', 
-                color: '#555555', 
-                '&.Mui-selected': { color: '#1976d2' } 
-              }} 
+            <Tab
+              label='Join with Invite Code'
+              sx={{
+                fontWeight: 'bold',
+                color: '#555555',
+                '&.Mui-selected': { color: '#1976d2' },
+              }}
             />
           </Tabs>
           {tab === 0 && (
             <Box mt={2}>
               <TextField
-                label="Plan Name"
+                label='Plan Name'
                 value={planName}
                 onChange={(e) => setPlanName(e.target.value)}
                 fullWidth
-                margin="normal"
-                variant="outlined"
+                margin='normal'
+                variant='outlined'
               />
               <TextField
-                label="Start Date"
-                type="date"
+                label='Start Date'
+                type='date'
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
                 InputLabelProps={{ shrink: true }}
                 fullWidth
-                margin="normal"
-                variant="outlined"
+                margin='normal'
+                variant='outlined'
               />
               <TextField
-                label="End Date"
-                type="date"
+                label='End Date'
+                type='date'
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
                 InputLabelProps={{ shrink: true }}
                 fullWidth
-                margin="normal"
-                variant="outlined"
+                margin='normal'
+                variant='outlined'
               />
               {error && (
-                <Typography color="error" variant="body2" sx={{ mt: 1 }}>
+                <Typography color='error' variant='body2' sx={{ mt: 1 }}>
                   {error}
                 </Typography>
               )}
               <Button
-                variant="contained"
+                variant='contained'
                 onClick={handleCreatePlan}
                 disabled={!userName || !planName || !startDate || !endDate}
                 fullWidth
@@ -159,15 +176,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onCreatePlan, onJoinPlan }
           {tab === 1 && (
             <Box mt={2}>
               <TextField
-                label="Invite Code"
+                label='Invite Code'
                 value={inviteCode}
                 onChange={(e) => setInviteCode(e.target.value)}
                 fullWidth
-                margin="normal"
-                variant="outlined"
+                margin='normal'
+                variant='outlined'
               />
               <Button
-                variant="contained"
+                variant='contained'
                 onClick={handleJoinPlan}
                 disabled={!userName || !inviteCode}
                 fullWidth

@@ -9,46 +9,49 @@ export interface AddDelButtonsProps {
   addCardHandler: (props: AddProps) => void;
 }
 
-export const AddDelButtons = ({ id, deleteCardHandler, addCardHandler }: AddDelButtonsProps) => {
-
+export const AddDelButtons = ({
+  id,
+  deleteCardHandler,
+  addCardHandler,
+}: AddDelButtonsProps) => {
   return (
-    <div className="absolute top-2 right-2 flex gap-2">
-      <Tooltip title="Add card before" arrow>
+    <div className='absolute top-2 right-2 flex gap-2'>
+      <Tooltip title='Add card before' arrow>
         <IconButton
           onClick={() => addCardHandler({ addType: AddType.BEFORE, id: id })}
-          size="small"
+          size='small'
           sx={{
             padding: '4px',
             backgroundColor: 'rgba(255, 255, 255, 0.9)',
           }}
         >
-          <Add fontSize="small" />
+          <Add fontSize='small' />
         </IconButton>
       </Tooltip>
 
-      <Tooltip title="Delete card" arrow>
+      <Tooltip title='Delete card' arrow>
         <IconButton
           onClick={() => deleteCardHandler(id)}
-          size="small"
+          size='small'
           sx={{
             padding: '4px',
             backgroundColor: 'rgba(255, 255, 255, 0.9)',
           }}
         >
-          <Delete fontSize="small" />
+          <Delete fontSize='small' />
         </IconButton>
       </Tooltip>
 
-      <Tooltip title="Add card after" arrow>
+      <Tooltip title='Add card after' arrow>
         <IconButton
           onClick={() => addCardHandler({ addType: AddType.AFTER, id: id })}
-          size="small"
+          size='small'
           sx={{
             padding: '4px',
             backgroundColor: 'rgba(255, 255, 255, 0.9)',
           }}
         >
-          <Add fontSize="small" />
+          <Add fontSize='small' />
         </IconButton>
       </Tooltip>
     </div>
