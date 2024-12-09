@@ -55,7 +55,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     <Box
       sx={{
         minHeight: '100vh',
-        background: 'rgba(68,165,255,0.2)',
+        background: '#d3d9d4',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
@@ -76,7 +76,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             variant='h5'
             sx={{
               textAlign: 'center',
-              color: '#1976d2',
+              color: '#7d96ad',
               fontWeight: 'bold',
             }}
           >
@@ -95,7 +95,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             value={tab}
             onChange={handleTabChange}
             indicatorColor='primary'
-            textColor='primary'
+            textColor='inherit'
             variant='fullWidth'
             sx={{
               marginTop: '20px',
@@ -108,7 +108,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
               sx={{
                 fontWeight: 'bold',
                 color: '#555555',
-                '&.Mui-selected': { color: '#1976d2' },
+                '&.Mui-selected': { color: '#7d96ad' },
               }}
             />
             <Tab
@@ -116,7 +116,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
               sx={{
                 fontWeight: 'bold',
                 color: '#555555',
-                '&.Mui-selected': { color: '#1976d2' },
+                '&.Mui-selected': { color: '#7d96ad' },
               }}
             />
           </Tabs>
