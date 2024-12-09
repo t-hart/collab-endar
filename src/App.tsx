@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { HubConnectionBuilder, HubConnection } from '@microsoft/signalr';
 import { DateCard } from "./components/DateCard"
-import { Button, Divider, Stack, TextField } from '@mui/material';
+import { Button, Divider, Grid, Stack, TextField } from '@mui/material';
 import { LoginPage } from "./components/LoginPage"
 import { AddType, AddProps, Plan, createBasePlan, PlanDate, getPlan, createPlanDate, getDateString, ErrorResponse, stringifyPlanDate, DateMsg } from './helpers/interface';
 import { addDays, subDays, differenceInDays } from 'date-fns';
@@ -321,11 +321,14 @@ function App() {
 
   return (
     <div style={{
-      backgroundColor: undefined,
+      backgroundColor: 'rgba(68,165,255,0.2)',
       minHeight: '100vh',
       minWidth: '100%',
-      width: 'fit-content',
+      width: '100%',
+      padding: '10px',
+      boxSizing: 'border-box',
     }}>
+      <div style={{ backgroundColor: 'rgba(128,128,128,0.2)', padding: '20px', borderRadius: '5px'}}>
       <h1>{planName}</h1>
       <div style={{ display: 'flex', alignItems: 'center' }}>
         <Button variant="contained" onClick={() => navigator.clipboard.writeText(planId || '')}>
@@ -333,28 +336,47 @@ function App() {
         </Button>
         <TextField
           variant="outlined"
+          size="small"
           value={planId || ''}
           InputProps={{
             readOnly: true,
+            style: {'padding': '0'},
           }}
-          style={{ marginLeft: '10px', flex: 1 }}
+          style={{ marginLeft: '10px', backgroundColor: 'white', width: 'auto', borderRadius: '8px', flex: 1,maxWidth: '450px' }}
         />
-      </div>
+      </div></div>
       <Divider style={{ margin: '20px 0' }} />
-      <Stack direction="row" spacing={2} alignItems="flex-start">
+      <Grid container spacing={2} wrap="wrap">
+        <Grid container item spacing={2} style={{ marginBottom: '10px' }}>
+          {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day) => (
+            <Grid
+              item
+              key={day}
+              style={{ flex: '0 0 14.28%', maxWidth: '14.28%' }}
+            >
+              <strong>{day}</strong>
+            </Grid>
+          ))}
+        </Grid>
+        
         {planId &&
           dates.map((card) => (
-            <DateCard
+            <Grid
+              item
               key={card.id.toString()}
-              userName={userName}
-              planId={planId}
-              planDate={card}
-              connection={connection}
-              delDateCardHandler={deleteDateHandler}
-              addDateCardHandler={addDateHandler}
-            />
+              style={{ flex: '0 0 14.28%', maxWidth: '14.28%' }}
+            >
+              <DateCard
+                userName={userName}
+                planId={planId}
+                planDate={card}
+                connection={connection}
+                delDateCardHandler={deleteDateHandler}
+                addDateCardHandler={addDateHandler}
+              />
+            </Grid>
           ))}
-      </Stack>
+      </Grid>
     </div>
   );
 }
