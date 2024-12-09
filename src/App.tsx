@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { HubConnectionBuilder, HubConnection } from '@microsoft/signalr';
 import { DateCard } from "./components/DateCard"
-import { Button, Divider, Grid, Stack, TextField } from '@mui/material';
+import { Box, Button, Divider, Grid, Stack, TextField, Typography } from '@mui/material';
 import { LoginPage } from "./components/LoginPage"
 import { AddType, AddProps, Plan, createBasePlan, PlanDate, getPlan, createPlanDate, getDateString, ErrorResponse, stringifyPlanDate, DateMsg } from './helpers/interface';
 import { addDays, subDays, differenceInDays } from 'date-fns';
 import { v4 as uuid } from 'uuid';
-import { eachDayOfInterval } from 'date-fns';
+import { startOfWeek, endOfWeek, eachDayOfInterval, isSameDay } from 'date-fns';
 
 export interface AppProps {
   date: Date
@@ -20,6 +20,7 @@ function App() {
   const [planId, setPlanId] = useState<string | null>(null);
   const [plan, setPlan] = useState<Plan | null>(null);
   const [dates, setDates] = useState<PlanDate[]>([]);
+  const [weeks, setWeeks] = useState<Array<Array<PlanDate | null>>>([]);
   const [addedDate, setAddedDate] = useState<PlanDate | null>();
   const [deletedDate, setDeletedDate] = useState<Date | null>();
   const [connection, setConnection] = useState<HubConnection | null>(null);
@@ -292,6 +293,51 @@ function App() {
 
   }, [addedDate])
 
+  // Sorting dates for display
+  useEffect(() => {
+    const groupDatesByWeek = (dates: PlanDate[]): Array<Array<PlanDate | null>> => {
+      if (!dates || dates.length === 0) return [];
+    
+      // Sort date cards in increasing order
+      const sortedDates = dates.slice().sort((a, b) => a.id.getTime() - b.id.getTime());
+    
+      // Determine number of weeks to display
+      const firstDate = sortedDates[0].id;
+      const lastDate = sortedDates[sortedDates.length - 1].id;
+      const startOfFirstWeek = startOfWeek(firstDate, { weekStartsOn: 6 });
+      const endOfLastWeek = endOfWeek(lastDate, { weekStartsOn: 6 });
+    
+      // Get all dates within the range
+      const allDates = eachDayOfInterval({ start: startOfFirstWeek, end: endOfLastWeek });
+    
+      const weeks: Array<Array<PlanDate | null>> = [];
+      let currentWeek: Array<PlanDate | null> = [];
+    
+      allDates.forEach((date, index) => {
+        // Find if the current date exists in the plan
+        const dateCard = sortedDates.find(d => isSameDay(d.id, date)) || null;
+        currentWeek.push(dateCard);
+    
+        // After 7 days, push week, start new week
+        if ((index + 1) % 7 === 0) {
+          weeks.push(currentWeek);
+          currentWeek = [];
+        }
+      });
+    
+      // Push the remaining days
+      if (currentWeek.length > 0) {
+        weeks.push(currentWeek);
+      }
+      return weeks;
+    };
+
+    if (dates.length > 0) {
+      const weeks = groupDatesByWeek(dates);
+      setWeeks(weeks);
+    }
+  }, [dates]);
+
   if (error) {
     return (
       <div>
@@ -320,62 +366,150 @@ function App() {
   }
 
   return (
-    <div style={{
-      backgroundColor: 'rgba(68,165,255,0.2)',
-      minHeight: '100vh',
-      minWidth: '100%',
-      width: '100%',
-      padding: '10px',
-      boxSizing: 'border-box',
-    }}>
-      <div style={{ backgroundColor: 'rgba(128,128,128,0.2)', padding: '20px', borderRadius: '5px'}}>
-      <h1>{planName}</h1>
-      <div style={{ display: 'flex', alignItems: 'center' }}>
-        <Button variant="contained" onClick={() => navigator.clipboard.writeText(planId || '')}>
-          Copy invite code
-        </Button>
-        <TextField
-          variant="outlined"
-          size="small"
-          value={planId || ''}
-          InputProps={{
-            readOnly: true,
-            style: {'padding': '0'},
-          }}
-          style={{ marginLeft: '10px', backgroundColor: 'white', width: 'auto', borderRadius: '8px', flex: 1,maxWidth: '450px' }}
-        />
-      </div></div>
-      <Divider style={{ margin: '20px 0' }} />
-      <Grid container spacing={2} wrap="wrap">
-        <Grid container item spacing={2} style={{ marginBottom: '10px' }}>
-          {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day) => (
+    <div
+      style={{
+        backgroundColor: "#d3d9d4",
+        minHeight: "100vh",
+        width: "100%",
+        padding: "20px",
+        boxSizing: "border-box",
+      }}
+    >
+      {/* Header */}
+      <Box
+        sx={{
+          backgroundColor: "#7d96ad",
+          padding: "20px",
+          borderRadius: "8px",
+          boxSizing: "border-box",
+          marginBottom: "30px",
+          color: "#ffffff",
+        }}
+      >
+        {/* Show planName */}
+        <Typography variant="h4" gutterBottom style={{ color: "#000000" }}>
+          {plan.planMetadata.planName}
+        </Typography>
+
+        {/* Invite code section */}
+        <Box sx={{ display: "flex", alignItems: "center" }}>
+          
+          {/* Button */}
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() =>
+              navigator.clipboard.writeText(plan.planMetadata.planId || "")
+            }
+          >
+            Copy Invite Code
+          </Button>
+
+          {/* Invite Code */}
+          <TextField
+            variant="outlined"
+            size="small"
+            value={plan.planMetadata.planId || ""}
+            InputProps={{
+              readOnly: true,
+              style: { padding: "0", backgroundColor: "#ffffff" },
+            }}
+            inputProps={{
+              style: {
+                padding: "8px",
+                textOverflow: "ellipsis",
+                overflow: "hidden",
+                whiteSpace: "nowrap",
+              },
+            }}
+            sx={{
+              marginLeft: "15px",
+              backgroundColor: "#ffffff",
+              borderRadius: "8px",
+              flex: 1,
+              maxWidth: "400px",
+            }}
+          />
+        </Box>
+      </Box>
+  
+      <Divider sx={{ margin: "20px 0", borderColor: "#bdbdbd" }} />
+  
+      {/* Calendar grid */}
+      <Grid
+        container
+        style={{
+          border: "1px solid #bdbdbd",
+          borderRadius: "8px",
+          overflow: "hidden",
+        }}
+      >
+        {/* Days of the week */}
+        <Grid container item style={{ backgroundColor: "#7d96ad" }}>
+          {[
+            "Sunday",
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+          ].map((day, index) => (
             <Grid
               item
               key={day}
-              style={{ flex: '0 0 14.28%', maxWidth: '14.28%' }}
+              style={{
+                flex: "0 0 14.28%",
+                maxWidth: "14.28%",
+                textAlign: "center",
+                borderRight: index < 6 ? "1px solid #bdbdbd" : "none",
+                borderBottom: "1px solid #bdbdbd",
+                padding: "12px 0",
+                boxSizing: "border-box",
+              }}
             >
-              <strong>{day}</strong>
+              <Typography variant="subtitle1" fontWeight="bold">
+                {day}
+              </Typography>
             </Grid>
           ))}
         </Grid>
-        
-        {planId &&
-          dates.map((card) => (
-            <Grid
-              item
-              key={card.id.toString()}
-              style={{ flex: '0 0 14.28%', maxWidth: '14.28%' }}
-            >
-              <DateCard
-                userName={userName}
-                planId={planId}
-                planDate={card}
-                connection={connection}
-                delDateCardHandler={deleteDateHandler}
-                addDateCardHandler={addDateHandler}
-              />
-            </Grid>
-          ))}
+  
+        {/* Render week by week */}
+        {weeks.map((week, weekIndex) => (
+          <Grid
+            container
+            item
+            key={`week-${weekIndex}`}
+            style={{ backgroundColor: "#ffffff" }}
+          >
+            {week.map((dateCard, dayIndex) => (
+              <Grid
+                item
+                key={`day-${weekIndex}-${dayIndex}`}
+                style={{
+                  flex: "0 0 14.28%",
+                  maxWidth: "14.28%",
+                  borderRight: dayIndex < 6 ? "1px solid #bdbdbd" : "none",
+                  borderBottom: "1px solid #bdbdbd",
+                  padding: "10px",
+                  boxSizing: "border-box",
+                }}
+              >
+                {planId && dateCard && (
+                  <DateCard
+                    userName={userName}
+                    planId={planId}
+                    planDate={dateCard}
+                    connection={connection}
+                    delDateCardHandler={deleteDateHandler}
+                    addDateCardHandler={addDateHandler}
+                  />
+                )}
+              </Grid>
+            ))}
+          </Grid>
+        ))}
       </Grid>
     </div>
   );
