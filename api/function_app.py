@@ -178,15 +178,28 @@ def create_plan(
         logging.info(f"Attempting to save document to CosmosDB: {document}")
         outputDocPlan.set(json.dumps(document))
 
+        # Format for frontend
+        infoDoc = {
+            "planMetadata": {
+                "planId": plan_id,
+                "planName": plan_name,
+                "createdBy": created_by,
+            },
+            "dates": [
+                {"id": date["id"].split("|")[1] + "T00:00:00.000Z", "createdBy": created_by, "activities": []}
+                for date in docs["dates"]
+            ],
+        }
+
         # Send SignalR message to clients
         signalR.set(
             json.dumps(
-                {"target": "planCreated", "arguments": [docs], "groupName": plan_id}
+                {"target": "planCreated", "arguments": [infoDoc], "groupName": plan_id}
             )
         )
 
         return func.HttpResponse(
-            json.dumps({"status": "success", "data": docs}),
+            json.dumps({"status": "success", "data": infoDoc}),
             mimetype="application/json",
         )
     except Exception as e:
@@ -251,7 +264,10 @@ def get_plan(
         response = {
             "plan": dict(planDoc),
             "dates": sorted([dict(date) for date in datesDocs], key=lambda x: x["id"]),
-            "activities": sorted([dict(activity) for activity in activitiesDocs], key=lambda x: (x["id"].split('|')[1], int(x["id"].split('|')[3]))),
+            "activities": sorted(
+                [dict(activity) for activity in activitiesDocs],
+                key=lambda x: (x["id"].split("|")[1], int(x["id"].split("|")[3])),
+            ),
         }
 
         return func.HttpResponse(
@@ -547,7 +563,7 @@ def delete_date(
         deleteDoc.set(docs_to_delete)
 
         # Send SignalR message to clients
-        sync_args = [{"id": date_id, "byUser": user_name} ]
+        sync_args = [{"id": date_id, "byUser": user_name}]
         signalR.set(
             json.dumps(
                 {
@@ -781,7 +797,7 @@ def lock_activity(
         plan_id = req.route_params.get("plan_id")
         date_id = req.route_params.get("date_id")
         activity_id = req.route_params.get("activity_id")
-        
+
         activity_data = req.get_json()
         logging.info(f"activity_data: {activity_data}")
 
@@ -816,7 +832,13 @@ def lock_activity(
         logging.info(f"Document marked for deletion: {activity_id}")
 
         # Send SignalR message to clients
-        sync_args = [{"id": activity_id, "dateId": date_id, "byUser": required_fields["lockedBy"]}]
+        sync_args = [
+            {
+                "id": activity_id,
+                "dateId": date_id,
+                "byUser": required_fields["lockedBy"],
+            }
+        ]
         signalR.set(
             json.dumps(
                 {
@@ -934,7 +956,9 @@ def update_activity(
                 newDoc["id"] = activity_id_db
                 newDoc["activityText"] = required_fields["activityText"]
                 newDoc["lastUpdatedBy"] = required_fields["updatedBy"]
-                newDoc["lastUpdatedAt"] = int(datetime.now(timezone.utc).timestamp() * 1000)
+                newDoc["lastUpdatedAt"] = int(
+                    datetime.now(timezone.utc).timestamp() * 1000
+                )
                 updateDoc.set(func.Document.from_dict(newDoc))
 
                 # Mark old doc for deletion
@@ -957,7 +981,15 @@ def update_activity(
                 responseDoc = dict(inputDoc)
 
         # Send SignalR message to clients
-        sync_args = [{"activityText": required_fields["activityText"],"id": activity_id, "dateId": date_id, "isFinal": required_fields["isFinal"], "byUser": required_fields["updatedBy"]}]
+        sync_args = [
+            {
+                "activityText": required_fields["activityText"],
+                "id": activity_id,
+                "dateId": date_id,
+                "isFinal": required_fields["isFinal"],
+                "byUser": required_fields["updatedBy"],
+            }
+        ]
         signalR.set(
             json.dumps(
                 {

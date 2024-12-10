@@ -136,9 +136,10 @@ function App() {
           alert(`Error in createPlan: ${(data as ErrorResponse).error}`);
           return;
         }
-        setPlan(data.data.plan);
+        setPlan(data.data);
         setDates(data.data.dates);
-        setPlanId(data.data.plan.id);
+        setPlanId(data.data.planMetadata.planId);
+        setPlanName(data.data.planMetadata.planName);
       } catch (err) {
         alert(`Failed to create new plan: ${err}`);
       }
@@ -157,7 +158,6 @@ function App() {
           setPlan(fetchedPlan);
           setDates(fetchedPlan.dates);
           setPlan(fetchedPlan);
-          setDates(fetchedPlan.dates);
           setPlanName(fetchedPlan.planMetadata.planName);
         }
       } catch (error) {
@@ -340,8 +340,15 @@ function App() {
     ): Array<Array<PlanDate | null>> => {
       if (!dates || dates.length === 0) return [];
 
+      // Convert id to Date if it's a string
+      // This is a sketchy workaround, because we are not handling responses consistently
+      const convertedDates = dates.map((date) => ({
+        ...date,
+        id: typeof date.id === 'string' ? new Date(date.id) : date.id,
+      }));
+
       // Sort date cards in increasing order
-      const sortedDates = dates
+      const sortedDates = convertedDates
         .slice()
         .sort((a, b) => a.id.getTime() - b.id.getTime());
 
