@@ -480,7 +480,7 @@ function App() {
       >
         {/* Show planName */}
         <Typography
-          variant='h4'
+          variant='h5'
           style={{ fontFamily: 'Helvetica', fontWeight: 'bold' }}
         >
           Plan: {plan.planMetadata.planName}
