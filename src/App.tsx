@@ -27,6 +27,7 @@ import {
 import { addDays, subDays, differenceInDays } from 'date-fns';
 import { v4 as uuid } from 'uuid';
 import { startOfWeek, endOfWeek, eachDayOfInterval, isSameDay } from 'date-fns';
+import CircularProgress from '@mui/material/CircularProgress';
 
 export interface AppProps {
   date: Date;
@@ -394,8 +395,18 @@ function App() {
 
   if (error) {
     return (
-      <div>
-        <h1> {error}</h1>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100vh',
+          backgroundColor: '#e0e0e0',
+        }}
+      >
+        <Typography variant='h6'>
+          Aww shucks! Try refreshing? Error: {error}
+        </Typography>
       </div>
     );
   }
@@ -404,17 +415,41 @@ function App() {
       <LoginPage onCreatePlan={handleCreatePlan} onJoinPlan={handleJoinPlan} />
     );
   }
+
   if (!plan) {
     return (
-      <div>
-        <h1> Loading plan ...</h1>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100vh',
+          backgroundColor: '#e0e0e0',
+        }}
+      >
+        <CircularProgress />
+        <Typography variant='h6' style={{ marginLeft: '10px' }}>
+          Loading plan...
+        </Typography>
       </div>
     );
   }
+
   if (!connection) {
     return (
-      <div>
-        <h1> Connecting to SignalR ...</h1>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100vh',
+          backgroundColor: '#e0e0e0',
+        }}
+      >
+        <CircularProgress />
+        <Typography variant='h6' style={{ marginLeft: '10px' }}>
+          Connecting to SignalR...
+        </Typography>
       </div>
     );
   }
@@ -422,7 +457,7 @@ function App() {
   return (
     <div
       style={{
-        backgroundColor: '#d3d9d4',
+        backgroundColor: '#e0e0e0',
         minHeight: '100vh',
         width: '100%',
         padding: '20px',
@@ -432,17 +467,36 @@ function App() {
       {/* Header */}
       <Box
         sx={{
-          backgroundColor: '#7d96ad',
-          padding: '20px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          background: 'linear-gradient(to right, #2f3e46, #84a98c)',
+          padding: '10px',
           borderRadius: '8px',
           boxSizing: 'border-box',
-          marginBottom: '30px',
+          marginBottom: '8px',
           color: '#ffffff',
         }}
       >
         {/* Show planName */}
-        <Typography variant='h4' gutterBottom style={{ color: '#000000' }}>
-          {plan.planMetadata.planName}
+        <Typography
+          variant='h4'
+          style={{ fontFamily: 'Helvetica', fontWeight: 'bold' }}
+        >
+          Plan: {plan.planMetadata.planName}
+        </Typography>
+
+        <Typography
+          variant='h4'
+          style={{
+            fontFamily: 'Helvetica',
+            fontSize: '2rem',
+            textShadow: '2px 2px #000000',
+            fontWeight: 'bold',
+          }}
+        >
+          Collab-
+          <span style={{ fontStyle: 'italic' }}>endar!</span>
         </Typography>
 
         {/* Invite code section */}
@@ -454,6 +508,7 @@ function App() {
             onClick={() =>
               navigator.clipboard.writeText(plan.planMetadata.planId || '')
             }
+            style={{ fontFamily: 'Helvetica' }}
           >
             Copy Invite Code
           </Button>
@@ -473,6 +528,7 @@ function App() {
                 textOverflow: 'ellipsis',
                 overflow: 'hidden',
                 whiteSpace: 'nowrap',
+                fontFamily: 'Helvetica',
               },
             }}
             sx={{
@@ -480,13 +536,12 @@ function App() {
               backgroundColor: '#ffffff',
               borderRadius: '8px',
               flex: 1,
+              minWidth: '340px',
               maxWidth: '400px',
             }}
           />
         </Box>
       </Box>
-
-      <Divider sx={{ margin: '20px 0', borderColor: '#bdbdbd' }} />
 
       {/* Calendar grid */}
       <Grid
@@ -498,7 +553,7 @@ function App() {
         }}
       >
         {/* Days of the week */}
-        <Grid container item style={{ backgroundColor: '#7d96ad' }}>
+        <Grid container item style={{ backgroundColor: '#354f52' }}>
           {[
             'Sunday',
             'Monday',
@@ -521,7 +576,14 @@ function App() {
                 boxSizing: 'border-box',
               }}
             >
-              <Typography variant='subtitle1' fontWeight='bold'>
+              <Typography
+                variant='h6'
+                style={{
+                  color: '#ffffff',
+                  fontWeight: 'bold',
+                  fontFamily: 'Helvetica',
+                }}
+              >
                 {day}
               </Typography>
             </Grid>

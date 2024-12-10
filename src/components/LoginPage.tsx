@@ -55,7 +55,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     <Box
       sx={{
         minHeight: '100vh',
-        background: '#d3d9d4',
+        background: '#e0e0e0',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
@@ -69,18 +69,21 @@ export const LoginPage: React.FC<LoginPageProps> = ({
           borderRadius: '15px',
           boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
           backgroundColor: '#ffffff',
+          border: '10px solid #354f52',
         }}
       >
         <CardContent>
           <Typography
             variant='h5'
-            sx={{
-              textAlign: 'center',
-              color: '#7d96ad',
+            style={{
+              fontFamily: 'Helvetica',
+              fontSize: '2rem',
               fontWeight: 'bold',
+              textAlign: 'center',
             }}
           >
-            Travel Planner
+            Collab-
+            <span style={{ fontStyle: 'italic' }}>endar!</span>
           </Typography>
           <Box mt={3}>
             <TextField
@@ -89,6 +92,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({
               onChange={(e) => setUserName(e.target.value)}
               fullWidth
               variant='outlined'
+              InputProps={{
+                style: { fontFamily: 'Helvetica' },
+              }}
+              InputLabelProps={{
+                style: { fontFamily: 'Helvetica', color: '#354f52' },
+              }}
             />
           </Box>
           <Tabs
@@ -107,16 +116,16 @@ export const LoginPage: React.FC<LoginPageProps> = ({
               label='Create a New Plan'
               sx={{
                 fontWeight: 'bold',
-                color: '#555555',
-                '&.Mui-selected': { color: '#7d96ad' },
+                color: '#7d96ad',
+                '&.Mui-selected': { color: '#354f52' },
               }}
             />
             <Tab
               label='Join with Invite Code'
               sx={{
                 fontWeight: 'bold',
-                color: '#555555',
-                '&.Mui-selected': { color: '#7d96ad' },
+                color: '#7d96ad',
+                '&.Mui-selected': { color: '#354f52' },
               }}
             />
           </Tabs>
@@ -135,7 +144,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 type='date'
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                InputLabelProps={{ shrink: true }}
+                InputLabelProps={{ shrink: true, style: { color: '#354f52' } }}
                 fullWidth
                 margin='normal'
                 variant='outlined'
@@ -145,7 +154,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 type='date'
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                InputLabelProps={{ shrink: true }}
+                InputLabelProps={{ shrink: true, style: { color: '#354f52' } }}
                 fullWidth
                 margin='normal'
                 variant='outlined'
@@ -182,6 +191,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 fullWidth
                 margin='normal'
                 variant='outlined'
+                InputLabelProps={{
+                  style: { color: '#354f52' },
+                }}
               />
               <Button
                 variant='contained'

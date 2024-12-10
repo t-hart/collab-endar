@@ -210,7 +210,7 @@ export const DateCard = ({
       onMouseLeave={() => setHoveredCard(false)}
       sx={{
         boxShadow: 'none',
-        backgroundColor: '#f5f5f5',
+        backgroundColor: '#52796f',
         // minWidth: '350px'
       }}
     >
@@ -229,7 +229,7 @@ export const DateCard = ({
             addCardHandler={addDateCardHandler}
           ></AddDelButtons>
         )}
-        <h3 className='text-lg font-medium mb-3'>{dateStr}</h3>
+        <h3 style={{ fontFamily: 'Helvetica', color: 'white' }}>{dateStr}</h3>
         <div className='space-y-2'>
           {activities.map((card) => (
             <ActivityCard

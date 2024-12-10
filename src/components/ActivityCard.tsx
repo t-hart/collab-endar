@@ -216,6 +216,7 @@ export const ActivityCard = ({
           zIndex: 1,
           backgroundColor: 'white',
           padding: '0 4px',
+          fontFamily: 'Helvetica, Arial, sans-serif',
         }}
       >
         {otherIsTyping ? `${otherIsTyping} is typing ...` : ''}
@@ -255,6 +256,7 @@ export const ActivityCard = ({
           sx={{
             flex: 1, // Take remaining space
             '& .MuiInput-root': {
+              fontFamily: 'Helvetica, Arial, sans-serif',
               fontSize: '0.9375rem',
               color: 'rgba(0, 0, 0, 0.87)',
               height: '100%', // Take full height
