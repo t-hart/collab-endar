@@ -211,7 +211,7 @@ export const ActivityCard = ({
           position: 'absolute',
           top: '0px',
           right: '4px',
-          fontSize: '0.5rem',
+          fontSize: '1.0rem',
           color: 'blue',
           zIndex: 1,
           backgroundColor: 'white',

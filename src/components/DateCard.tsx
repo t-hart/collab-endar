@@ -92,7 +92,7 @@ export const DateCard = ({
   // send activity DELETE event
   useEffect(
     () => {
-      if (!deletedActivity) return;
+      if (!deletedActivity && deletedActivity !== 0) return;
 
       (async () => {
         try {
