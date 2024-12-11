@@ -51,9 +51,9 @@ export const DateCard = ({
         return current;
       }
       const idx = current.findIndex((card) => card.id == id);
+      setDeletedActivity(id);
       return [...current.slice(0, idx), ...current.slice(idx + 1)];
     });
-    setDeletedActivity(id);
   };
 
   const addActivityHandler = (props: AddProps) => {

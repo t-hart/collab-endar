@@ -55,9 +55,9 @@ function App() {
         return current;
       }
       const idx = current.findIndex((date) => date.id === id);
+      setDeletedDate(id);
       return [...current.slice(0, idx), ...current.slice(idx + 1)];
     });
-    setDeletedDate(id);
   };
 
   const addDateHandler = (props: AddProps) => {
@@ -220,7 +220,6 @@ function App() {
   }, [planId]);
 
   // signalR listeners
-  // TODO: add real handler for each event
   useEffect(() => {
     if (!connection) return;
 
