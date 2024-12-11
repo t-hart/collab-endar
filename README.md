@@ -20,19 +20,17 @@ Hovering over a date card provides you with the following options: insert a date
 > [!CAUTION]
 > Deleting a date automatically deletes all activities on that day.
 
-![](docs/images/card_options.jpg)
+<img src="docs/images/card_options.jpg" width="300">
 
 ## Collaboration Features
 
 Collab-_endar!_ lets you collaborate with others effortlessly by enabling any amount of users to be simultaneously connected to the same plan While editing an activity, after each space, or if you click away from the activity card, the text is synced to all other users currently viewing the plan. In fact, every action is immediately synced to all users viewing a plan, including activity card modification/addition/deletion, and date card addition/deletion. This way, you can effectively collaborate to plan your plan without fear of having an out of date view.
 
-When a user is typing in an activity card, the card is locked to prevent other uses from editing it at the same time, preventing confusion. When a card is locked a small indicator on the activity card shows which user is currently editing it.
+When a user is typing in an activity card, the card is locked to prevent other uses from editing it at the same time, preventing confusion. When a card is locked a small indicator on the activity card shows which user is currently editing it. Collab-_endar!_ also lets you vote on activities. You can optionally give an activity card a thumbs up or a thumbs down. Your own vote, if casted, will be indicated by the filled icon. Similar to activity content, votes are synced immediately across all collaborators of the same plan.
 
-![](docs/images/locked_activity.jpg)
-
-Collab-_endar!_ also lets you vote on activities. You can only give either a thumb up, a thumb down, or no vote. Your own vote, if casted, will be indicated by the filled icon. Similar to activity content, all the votes are synced immediately across all collaborators of the same plan.
-
-![](docs/images/voted_activity.jpg)
+Locked activity            |  Voted activity
+:-------------------------:|:-------------------------:
+<img src="docs/images/locked_activity.jpg" width="300"> | <img src="docs/images/voted_activity.jpg" width="300">
 
 ## Technologies Utilized
 
