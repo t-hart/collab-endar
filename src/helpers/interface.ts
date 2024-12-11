@@ -6,6 +6,12 @@ export enum AddType {
   AFTER = 'AFTER',
 }
 
+export enum VoteType {
+  UP = 'UP',
+  DOWN = 'DOWN',
+  NONE = 'NONE',
+}
+
 export interface AddProps {
   addType: AddType;
   id: number | Date;
@@ -32,6 +38,8 @@ export interface PlanActivity {
   id: number;
   createdBy: string;
   activityText?: string;
+  upVotedUsers?: string[];
+  downVotedUsers?: string[];
 }
 
 export async function getPlan(planId: string): Promise<Plan> {

@@ -2,6 +2,7 @@
 import React, { ChangeEvent, useState, useEffect } from 'react';
 import { Card, CardContent, TextField, Typography } from '@mui/material';
 import AddDelButtons from './AddDelButtons';
+import ThumbUpDown from './ThumbUpDown';
 import { HubConnection } from '@microsoft/signalr';
 import { AddProps, ActivityMsg, ErrorResponse } from '../helpers/interface';
 
@@ -199,7 +200,7 @@ export const ActivityCard = ({
         boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
         marginBottom: '8px',
         backgroundColor: isMeEditing ? '#f0f8ff' : undefined, // Light blue background
-        minHeight: '100px', // Set minimum height
+        minHeight: '80px', // Set minimum height
         height: 'auto', // Allow height to grow
         '&:last-child': {
           marginBottom: 0,
@@ -211,7 +212,7 @@ export const ActivityCard = ({
           position: 'absolute',
           top: '0px',
           right: '4px',
-          fontSize: '1.0rem',
+          fontSize: '0.9rem',
           color: 'blue',
           zIndex: 1,
           backgroundColor: 'white',
@@ -227,6 +228,7 @@ export const ActivityCard = ({
           height: '100%', // Take full height of parent
           display: 'flex', // Use flexbox
           flexDirection: 'column', // Stack children vertically
+          position: 'relative',
           '&:last-child': {
             paddingBottom: '12px !important',
           },
@@ -254,12 +256,14 @@ export const ActivityCard = ({
             setIsMeEditing(false);
           }}
           sx={{
+            marginBottom: '8px',
             flex: 1, // Take remaining space
             '& .MuiInput-root': {
               fontFamily: 'Helvetica, Arial, sans-serif',
-              fontSize: '0.9375rem',
+              fontSize: '1.0rem',
               color: 'rgba(0, 0, 0, 0.87)',
-              height: '100%', // Take full height
+              height: 'auto', // Take full height
+              paddingBottom: '16px',  // Create space for buttons
               '&:before': {
                 borderBottom: 'none',
               },
@@ -272,11 +276,16 @@ export const ActivityCard = ({
             },
             '& .MuiInput-input': {
               padding: '0px',
-              height: '100%', // Take full height
+              height: 'auto', // Take full height
               overflow: 'auto', // Add scrolling if needed
             },
           }}
         />
+        <ThumbUpDown
+          id={id}
+          deleteCardHandler={delActvCardHandler}
+          addCardHandler={addActvCardHandler}
+        ></ThumbUpDown>
       </CardContent>
     </Card>
   );
