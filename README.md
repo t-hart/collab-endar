@@ -30,6 +30,10 @@ When a user is typing in an activity card, the card is locked to prevent other u
 
 ![](docs/images/locked_activity.jpg)
 
+Collab-_endar!_ also lets you vote on activities. You can only give either a thumb up, a thumb down, or no vote. Your own vote, if casted, will be indicated by the filled icon. Similar to activity content, all the votes are synced immediately across all collaborators of the same plan.
+
+![](docs/images/voted_activity.jpg)
+
 ## Technologies Utilized
 
 - `Azure SingalR` - For real-time updates across simultaneous client connections.
