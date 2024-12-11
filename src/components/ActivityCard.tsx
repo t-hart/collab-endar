@@ -4,14 +4,13 @@ import { Card, CardContent, TextField, Typography } from '@mui/material';
 import AddDelButtons from './AddDelButtons';
 import ThumbUpDown from './ThumbUpDown';
 import { HubConnection } from '@microsoft/signalr';
-import { AddProps, ActivityMsg, ErrorResponse } from '../helpers/interface';
+import { AddProps, ActivityMsg, ErrorResponse, PlanActivity } from '../helpers/interface';
 
 export interface ActivityCardProps {
   userName: string;
-  id: number;
+  planActivity: PlanActivity;
   planDateStr: string;
   planId: string;
-  content?: string;
   delActvCardHandler: (id: number) => void;
   addActvCardHandler: (props: AddProps) => void;
   connection: HubConnection;
@@ -19,14 +18,18 @@ export interface ActivityCardProps {
 
 export const ActivityCard = ({
   userName,
-  id,
+  planActivity,
   planDateStr,
   planId,
-  content,
   delActvCardHandler,
   addActvCardHandler,
   connection,
 }: ActivityCardProps) => {
+
+  const id = planActivity.id
+  const content = planActivity.activityText
+
+
   const [activityText, setActivityText] = useState<string>(
     content ? content : ''
   );
@@ -186,11 +189,9 @@ export const ActivityCard = ({
   }, []);
 
   // component render
-  // TODO: add logics and style to lock this component when needed
-  // ${isActive ? 'ring-2 ring-blue-200 bg-blue-50' : ''}
   return (
     <Card
-      className={`transition-all duration-200`}
+      className="transition-all duration-200"
       onMouseEnter={() => setHoveredCard(id)}
       onMouseLeave={() => setHoveredCard(null)}
       sx={{
@@ -199,71 +200,72 @@ export const ActivityCard = ({
         borderRadius: '8px',
         boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
         marginBottom: '8px',
-        backgroundColor: isMeEditing ? '#f0f8ff' : undefined, // Light blue background
-        minHeight: '80px', // Set minimum height
-        height: 'auto', // Allow height to grow
+        backgroundColor: isMeEditing ? '#f0f8ff' : undefined,
+        minHeight: '80px',
+        height: 'auto',
         '&:last-child': {
           marginBottom: 0,
         },
       }}
     >
-      <Typography
-        sx={{
-          position: 'absolute',
-          top: '0px',
-          right: '4px',
-          fontSize: '0.9rem',
-          color: 'blue',
-          zIndex: 1,
-          backgroundColor: 'white',
-          padding: '0 4px',
-          fontFamily: 'Helvetica, Arial, sans-serif',
-        }}
-      >
-        {otherIsTyping ? `${otherIsTyping} is typing ...` : ''}
-      </Typography>
       <CardContent
         sx={{
-          padding: '12px !important',
-          height: '100%', // Take full height of parent
-          display: 'flex', // Use flexbox
-          flexDirection: 'column', // Stack children vertically
+          padding: otherIsTyping ? '32px 12px 12px 12px !important' : '12px !important',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
           position: 'relative',
+          transition: 'padding 0.2s ease-in-out',
           '&:last-child': {
             paddingBottom: '12px !important',
           },
         }}
       >
+        {otherIsTyping && (
+          <Typography
+            sx={{
+              position: 'absolute',
+              top: '8px',
+              right: '12px',
+              fontSize: '0.8rem',
+              color: 'blue',
+              zIndex: 1,
+              backgroundColor: 'white',
+              padding: '0 4px',
+              fontFamily: 'Helvetica, Arial, sans-serif',
+            }}
+          >
+            {`${otherIsTyping} is typing ...`}
+          </Typography>
+        )}
+
         {hoveredCard === id && (
           <AddDelButtons
             id={id}
             deleteCardHandler={delActvCardHandler}
             addCardHandler={addActvCardHandler}
-          ></AddDelButtons>
+          />
         )}
+
         <TextField
           disabled={otherIsTyping ? true : false}
           fullWidth
-          multiline // Allow multiple lines
-          variant='standard'
+          multiline
+          variant="standard"
           value={activityText}
-          placeholder='Enter Activity'
+          placeholder="Enter Activity"
           onChange={handleContentChange}
-          onFocus={() => {
-            setIsMeEditing(true);
-          }}
-          onBlur={() => {
-            setIsMeEditing(false);
-          }}
+          onFocus={() => setIsMeEditing(true)}
+          onBlur={() => setIsMeEditing(false)}
           sx={{
             marginBottom: '8px',
-            flex: 1, // Take remaining space
+            flex: 1,
             '& .MuiInput-root': {
               fontFamily: 'Helvetica, Arial, sans-serif',
               fontSize: '1.0rem',
               color: 'rgba(0, 0, 0, 0.87)',
-              height: 'auto', // Take full height
-              paddingBottom: '16px',  // Create space for buttons
+              height: 'auto',
+              paddingBottom: '16px',
               '&:before': {
                 borderBottom: 'none',
               },
@@ -276,16 +278,19 @@ export const ActivityCard = ({
             },
             '& .MuiInput-input': {
               padding: '0px',
-              height: 'auto', // Take full height
-              overflow: 'auto', // Add scrolling if needed
+              height: 'auto',
+              overflow: 'auto',
             },
           }}
         />
+
         <ThumbUpDown
-          id={id}
-          deleteCardHandler={delActvCardHandler}
-          addCardHandler={addActvCardHandler}
-        ></ThumbUpDown>
+          userName={userName}
+          planActivity={planActivity}
+          planId={planId}
+          planDateStr={planDateStr}
+          connection={connection}
+        />
       </CardContent>
     </Card>
   );

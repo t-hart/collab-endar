@@ -235,10 +235,9 @@ export const DateCard = ({
             <ActivityCard
               key={card.id}
               userName={userName}
-              id={card.id}
+              planActivity={card}
               planDateStr={dateStr}
               planId={planId}
-              content={card.activityText ? card.activityText : undefined}
               delActvCardHandler={deleteActivityHandler}
               addActvCardHandler={addActivityHandler}
               connection={connection}

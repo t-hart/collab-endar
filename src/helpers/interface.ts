@@ -1,4 +1,3 @@
-import { v4 as uuid } from 'uuid';
 import { eachDayOfInterval } from 'date-fns';
 
 export enum AddType {
@@ -38,8 +37,8 @@ export interface PlanActivity {
   id: number;
   createdBy: string;
   activityText?: string;
-  upVotedUsers?: string[];
-  downVotedUsers?: string[];
+  upVoters?: string[];
+  downVoters?: string[];
 }
 
 export async function getPlan(planId: string): Promise<Plan> {
@@ -65,6 +64,8 @@ export async function getPlan(planId: string): Promise<Plan> {
           id: parseInt(activity.id.split('|')[3]),
           createdBy: activity.createdBy,
           activityText: activity.activityText,
+          upVoters: activity.upVoters,
+          downVoters: activity.downVoters,
         })),
     }))
     .sort((a: PlanDate, b: PlanDate) => a.id.getTime() - b.id.getTime());
@@ -135,6 +136,8 @@ export interface ActivityMsg {
   byUser: string;
   activityText?: string;
   isFinal?: boolean;
+  upVoters?: string[];
+  downVoters?: string[];
 }
 
 export interface DateMsg {

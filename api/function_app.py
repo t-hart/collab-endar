@@ -1009,3 +1009,126 @@ def update_activity(
         return func.HttpResponse(
             json.dumps({"error": str(e)}), status_code=500, mimetype="application/json"
         )
+
+
+@app.route(
+    route="voteActivity/{plan_id}/{date_id}/{activity_id}",
+    methods=["PATCH"],
+    auth_level=func.AuthLevel.ANONYMOUS,
+)
+@app.generic_input_binding(
+    arg_name="inputDoc",
+    type="cosmosDB",
+    connection_string_setting=COSMOS_CONN_STRING,
+    database_name=COSMOS_DB_NAME,
+    container_name=COSMOS_CONTAINER_NAME,
+    id="date|{date_id}|activity|{activity_id}",
+    partitionKey="{plan_id}",
+)
+@app.generic_output_binding(
+    arg_name="updateDoc",
+    type="cosmosDB",
+    connection_string_setting=COSMOS_CONN_STRING,
+    database_name=COSMOS_DB_NAME,
+    container_name=COSMOS_CONTAINER_NAME,
+)
+@app.generic_output_binding(
+    arg_name="signalR",
+    type="signalR",
+    hub_name=SIGNALR_HUB_NAME,
+    connection_string_setting=SIGNALR_CONN_STRING,
+)
+def vote_activity(
+    req: func.HttpRequest,
+    inputDoc: func.DocumentList,
+    signalR: func.Out[str],
+    updateDoc: func.Out[func.Document],
+) -> func.HttpResponse:
+    """
+    Vote activity.
+    """
+    try:
+        logging.info("Starting vote_activity function")
+
+        # Get route parameters and JSON data
+        plan_id = req.route_params.get("plan_id")
+        date_id = req.route_params.get("date_id")
+        activity_id = req.route_params.get("activity_id")
+        activity_data = req.get_json()
+        logging.info(f"activity_data: {activity_data}")
+
+        # Validate required JSON fields
+        required_fields = {
+            "upVoters": activity_data.get("upVoters"),
+            "downVoters": activity_data.get("downVoters"),
+            "voter": activity_data.get("voter"),
+        }
+        missing_fields = [x for x, y in required_fields.items() if y is None]
+        if missing_fields:
+            return func.HttpResponse(
+                json.dumps(
+                    {
+                        "error": "Missing required fields from JSON",
+                        "missing": missing_fields,
+                    }
+                ),
+                status_code=400,
+                mimetype="application/json",
+            )
+
+        if not inputDoc:
+            return func.HttpResponse(
+                json.dumps(
+                    {
+                        "error": f"Activity '{activity_id}' not found in plan '{plan_id}' on date '{date_id}'"
+                    }
+                ),
+                status_code=404,
+                mimetype="application/json",
+            )
+
+        # Determine if activity needs to be moved
+        inputDoc = list(inputDoc)[0]
+        activity_id_db = f"date|{date_id}|activity|{activity_id}"
+
+        
+        # Update existing doc
+        inputDoc["upVoters"] = required_fields["upVoters"]
+        inputDoc["downVoters"] = required_fields["downVoters"]
+        inputDoc["lastUpdatedBy"] = required_fields["voter"]
+        inputDoc["lastUpdatedAt"] = int(
+            datetime.now(timezone.utc).timestamp() * 1000
+        )
+        updateDoc.set(inputDoc)
+
+        logging.info(f"Activity votes updated: {activity_id_db}")
+
+        # Send SignalR message to clients
+        sync_args = [
+            {
+                "upVoters": required_fields["upVoters"],
+                "downVoters": required_fields["downVoters"],
+                "byUser": required_fields["voter"],
+                "id": activity_id,
+                "dateId": date_id,
+            }
+        ]
+        signalR.set(
+            json.dumps(
+                {
+                    "target": "voteActivity",
+                    "arguments": sync_args,
+                    "groupName": plan_id,
+                }
+            )
+        )
+
+        return func.HttpResponse(
+            json.dumps({"status": "success", "activity": sync_args}),
+            mimetype="application/json",
+        )
+    except Exception as e:
+        logging.exception("Error in vote_activity")
+        return func.HttpResponse(
+            json.dumps({"error": str(e)}), status_code=500, mimetype="application/json"
+        )
