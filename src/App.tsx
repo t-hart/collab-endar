@@ -115,9 +115,15 @@ function App() {
   useEffect(() => {
     const createPlan = async () => {
       try {
+        console.log(startDate)
+        console.log(endDate)
+        
+        // temp fix!
+        const patchStartDate = new Date(startDate);
+        const patchEndDate = new Date(endDate);
         const dates = eachDayOfInterval({
-          start: new Date(startDate),
-          end: new Date(endDate),
+          start: addDays(patchStartDate, 1),
+          end: addDays(patchEndDate, 1)
         }).map((date) => ({
           id: date.toISOString().split('T')[0],
         }));
