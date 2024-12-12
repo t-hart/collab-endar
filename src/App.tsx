@@ -24,7 +24,7 @@ import {
   stringifyPlanDate,
   DateMsg,
 } from './helpers/interface';
-import { addDays, subDays, differenceInDays } from 'date-fns';
+import { addDays, subDays, differenceInDays, parseISO } from 'date-fns';
 import { v4 as uuid } from 'uuid';
 import { startOfWeek, endOfWeek, eachDayOfInterval, isSameDay } from 'date-fns';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -115,15 +115,9 @@ function App() {
   useEffect(() => {
     const createPlan = async () => {
       try {
-        console.log(startDate)
-        console.log(endDate)
-        
-        // temp fix!
-        const patchStartDate = new Date(startDate);
-        const patchEndDate = new Date(endDate);
         const dates = eachDayOfInterval({
-          start: addDays(patchStartDate, 1),
-          end: addDays(patchEndDate, 1)
+          start: parseISO(startDate),
+          end: parseISO(endDate)
         }).map((date) => ({
           id: date.toISOString().split('T')[0],
         }));
